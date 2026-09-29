@@ -1,0 +1,34 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Create Account | Zehnify{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        
+        <!-- Brand & Page Header -->
+        <div class="auth-header">
+            <span class="auth-subtitle">Get Started</span>
+            <h1 class="auth-title">Join Zehnify</h1>
+            <p class="auth-description">Create your account to start learning and tracking your progress.</p>
+        </div>
+
+        <!-- Signup Form -->
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="form-fields">
+                {{ form.as_p }}
+            </div>
+
+            <button type="submit" class="btn-submit">Create Account</button>
+        </form>
+
+        <!-- Footer Navigation Link -->
+        <div class="auth-footer-link">
+            <p>Already have an account? <a href="{% url 'login_page' %}">Log In</a></p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Dashboard | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    
+    <!-- Hero Banner Section -->
+    <section class="hero-banner">
+        <h1>Welcome Back!</h1>
+        <p>Select a subject to continue your learning journey.</p>
+    </section>
+
+    <!-- Section Header -->
+    <div class="section-header">
+        <h2 class="subjects-title">Your Subjects</h2>
+    </div>
+
+    <!-- Subject Cards Grid -->
+    <div class="card-grid">
+        {% for s in subjects %}
+            {% with s_name=s.name|lower %}
+                {% if 'physics' in s_name %}
+                    {% url 'subject_detail' s.id as subject_url %}
+                    <a href="{{ subject_url }}" class="subject-card card-physics">
+                {% elif 'chemistry' in s_name %}
+                    {% url 'subject_detail' s.id as subject_url %}
+                    <a href="{{ subject_url }}" class="subject-card card-chemistry">
+                {% else %}
+                    {% url 'subject_detail' s.id as subject_url %}
+                    <a href="{{ subject_url }}" class="subject-card card-default">
+                {% endif %}
+                    <div class="card-body">
+                        <h3>{{ s.name }}</h3>
+                    </div>
+                    <div class="card-footer">
+                        <span class="card-link">Explore Chapters &rarr;</span>
+                    </div>
+                </a>
+            {% endwith %}
+        {% empty %}
+            <p class="no-data">No subjects available right now.</p>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

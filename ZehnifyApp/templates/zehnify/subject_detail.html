@@ -1,0 +1,66 @@
+{% extends 'Zehnify/base.html' %}
+
+{% block title %}{{ subject.name }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container subject-detail-container">
+    
+    <!-- Back to Dashboard Link -->
+    <a href="{% url 'home_page' %}" class="back-link">&larr; Back to Dashboard</a>
+
+    <!-- Subject Hero Header -->
+    <section class="hero-banner subject-hero">
+        <h1>{{ subject.name }}</h1>
+        <p>Select a chapter from either grade below to start learning.</p>
+    </section>
+
+    <!-- Parallel Grade Columns Container -->
+    <div class="grades-grid">
+
+        <!-- 11th Grade Column -->
+        <div class="grade-column">
+            <div class="section-header grade-header">
+                <h2 class="subjects-title">11th Grade (HSSC-1)</h2>
+                <span class="chapter-count-badge">{{ chapters_11th|length }} Chapters</span>
+            </div>
+            
+            <div class="chapter-list">
+                {% for c in chapters_11th %}
+                <a href="{% url 'details_page' c.id %}" class="chapter-card">
+                    <div class="chapter-info">
+                        <span class="chapter-number">CH {{ forloop.counter }}</span>
+                        <h3>{{ c.name }}</h3>
+                    </div>
+                    <span class="chapter-arrow">&rarr;</span>
+                </a>
+                {% empty %}
+                <p class="no-data">No 11th-grade chapters added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 12th Grade Column -->
+        <div class="grade-column">
+            <div class="section-header grade-header">
+                <h2 class="subjects-title">12th Grade (HSSC-2)</h2>
+                <span class="chapter-count-badge">{{ chapters_12th|length }} Chapters</span>
+            </div>
+            
+            <div class="chapter-list">
+                {% for c in chapters_12th %}
+                <a href="{% url 'details_page' c.id %}" class="chapter-card">
+                    <div class="chapter-info">
+                        <span class="chapter-number">CH {{ forloop.counter }}</span>
+                        <h3>{{ c.name }}</h3>
+                    </div>
+                    <span class="chapter-arrow">&rarr;</span>
+                </a>
+                {% empty %}
+                <p class="no-data">No 12th-grade chapters added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

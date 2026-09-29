@@ -1,0 +1,63 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Review Exam | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container exam-review-page-container">
+    
+    <!-- Back Navigation -->
+    <a href="{% url 'details_page' attempt.chapter.id %}" class="back-link">&larr; Back to {{ attempt.chapter.name }}</a>
+
+    <!-- Header Banner -->
+    <section class="hero-banner exam-review-hero">
+        <span class="chapter-badge badge-purple">Review Mode</span>
+        <h1>{{ attempt.chapter.name }} - Exam Results</h1>
+        <p class="exam-score-text">Score: <strong>{{ attempt.score }} / {{ attempt.total_questions }}</strong> ({{ attempt.percentage }}%)</p>
+    </section>
+
+    <div class="question-list">
+        {% for ans in answers %}
+            <div class="question-card review-card {% if ans.is_correct %}card-pass{% else %}card-fail{% endif %}">
+                <div class="question-header">
+                    <span class="q-number">Question {{ forloop.counter }}</span>
+                    <div class="q-text">{{ ans.mcq.question_text|safe }}</div>
+                </div>
+                
+                {% if ans.mcq.diagram %}
+                    <div class="mcq-diagram-wrapper">
+                        <img src="{{ ans.mcq.diagram.url }}" alt="Question Diagram" class="mcq-diagram-img">
+                    </div>
+                {% endif %}
+
+                <!-- Options Review Display -->
+                <div class="options-review">
+                    <div class="review-status-row">
+                        <span class="user-answer-pill {% if ans.is_correct %}pill-correct{% else %}pill-incorrect{% endif %}">
+                            Your Answer: 
+                            {% if ans.selected_option %}
+                                <strong>Option {{ ans.selected_option }}</strong>
+                            {% else %}
+                                <em>Unanswered</em>
+                            {% endif %}
+                        </span>
+                        <span class="correct-answer-pill-review">
+                            Correct Answer: <strong>Option {{ ans.mcq.correct_option }}</strong>
+                        </span>
+                    </div>
+                </div>
+
+                {% if ans.mcq.master_explanation %}
+                    <div class="explanation-box">
+                        <strong>Explanation:</strong>
+                        <div>{{ ans.mcq.master_explanation|safe }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="no-data-card">
+                <p class="no-data">No review answers found for this exam attempt.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

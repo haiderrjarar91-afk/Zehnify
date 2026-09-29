@@ -1,0 +1,105 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}{{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container chapter-detail-page">
+    
+    <!-- Back Navigation -->
+    <a href="{% url 'subject_detail' chapter.subject.id %}" class="back-link">&larr; Back to {{ chapter.subject.name }}</a>
+
+    <!-- Chapter Hero Header with Progress Bar -->
+    <section class="hero-banner chapter-hero-banner">
+        <div class="hero-header-content">
+            <div class="hero-titles">
+                <span class="chapter-badge">{{ chapter.subject.name }}</span>
+                <h1>{{ chapter.name }}</h1>
+            </div>
+            
+            <!-- Chapter Mastery Card -->
+            <div class="mastery-summary-card">
+                <div class="mastery-text">
+                    <span>Chapter Mastery</span>
+                    <strong>{{ mastery|default:0 }}%</strong>
+                </div>
+                <!-- Visual Progress Bar -->
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="--mastery-width: {{ mastery|default:0 }};"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Header -->
+    <div class="section-header">
+        <h2 class="subjects-title">Learning Modules</h2>
+    </div>
+
+    <!-- Chapter Actions Grid -->
+    <div class="module-grid">
+        
+        <!-- 1. Video Lectures Module -->
+        <a href="{% url 'video_page' chapter.id %}" class="module-card">
+            <div class="module-icon icon-blue">&#9654;</div>
+            <div class="module-info">
+                <h3>Video Lectures</h3>
+                <p>Watch step-by-step explanations and topic walkthroughs.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+
+        <!-- 2. Interactive Notepad Module -->
+        <a href="{% url 'notes_page' chapter.id %}" class="module-card">
+            <div class="module-icon icon-purple">&#128221;</div>
+            <div class="module-info">
+                <h3>Interactive Notepad</h3>
+                <p>Record your formulas, conceptual reminders, and revision targets.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+
+        <!-- 3. Practice Arena Module -->
+        <a href="{% url 'practice_page' chapter.id %}" class="module-card">
+            <div class="module-icon icon-green">&#9999;&#65039;</div>
+            <div class="module-info">
+                <h3>Question Bank</h3>
+                <p>Solve hundreds of targeted questions to boost your understanding.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+
+        <!-- 4. Exam Review Module (Shows if an attempt exists) -->
+        {% if latest_attempt %}
+        <a href="{% url 'exam_review' chapter.id latest_attempt.id %}" class="module-card">
+            <div class="module-icon icon-amber">&#128269;</div>
+            <div class="module-info">
+                <h3>Review Last Exam</h3>
+                <p>Score: {{ latest_attempt.percentage }}% &mdash; Review your answers and explanations.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+
+        <!-- 5. Retake Final Test Module -->
+        <a href="{% url 'exam_page' chapter.id %}" class="module-card module-exam">
+            <div class="module-icon icon-amber">&#127942;</div>
+            <div class="module-info">
+                <h3>Retake Final Test</h3>
+                <p>Test your knowledge again and update your chapter mastery score.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+        {% else %}
+        <!-- 4. Take Final Test Module (Default if no attempts yet) -->
+        <a href="{% url 'exam_page' chapter.id %}" class="module-card module-exam">
+            <div class="module-icon icon-amber">&#127942;</div>
+            <div class="module-info">
+                <h3>Take Final Test</h3>
+                <p>Test your knowledge and update your chapter mastery score.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

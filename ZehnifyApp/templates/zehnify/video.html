@@ -1,0 +1,62 @@
+{% extends 'Zehnify/base.html' %}
+
+{% block title %}{{ chapter.name }} Lectures | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container video-library-page">
+    
+    <!-- Back Navigation -->
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">&larr; Back to {{ chapter.name }}</a>
+
+    <!-- Header Banner -->
+    <section class="hero-banner video-hero">
+        <span class="chapter-badge">Video Library</span>
+        <h1>{{ chapter.name }} - Lectures</h1>
+        <p>Watch video lessons and track your completion progress as you go.</p>
+    </section>
+
+    <!-- Lecture List -->
+    <div class="lecture-list">
+        {% for lecture in lectures %}
+            <div class="lecture-card {% if lecture.id in watched_ids %}is-watched{% endif %}">
+                
+                <!-- Play Icon / Thumbnail Placeholder -->
+                <div class="lecture-thumbnail">
+                    <span class="play-icon">&#9654;</span>
+                </div>
+
+                <!-- Lecture Details -->
+                <div class="lecture-info">
+                    <div class="lecture-header-meta">
+                        <span class="lecture-number">Lesson {{ forloop.counter }}</span>
+                        {% if lecture.id in watched_ids %}
+                            <span class="status-badge badge-watched">&#10003; Watched</span>
+                        {% else %}
+                            <span class="status-badge badge-unwatched">Unwatched</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ lecture.title }}</h3>
+                </div>
+
+                <!-- Actions -->
+                <div class="lecture-actions">
+                    <a href="{% url 'watch_lecture' lecture.id %}" class="btn-watch">Watch Lecture</a>
+
+                    <form method="POST" action="{% url 'toggle_video_watched' lecture.id %}" class="inline-form">
+                        {% csrf_token %}
+                        {% if lecture.id in watched_ids %}
+                            <button type="submit" class="btn-toggle btn-unmark" title="Click to unmark">Completed</button>
+                        {% else %}
+                            <button type="submit" class="btn-toggle btn-mark">Mark as Watched</button>
+                        {% endif %}
+                    </form>
+                </div>
+
+            </div>
+        {% empty %}
+            <p class="no-data">No lectures available for this chapter yet.</p>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

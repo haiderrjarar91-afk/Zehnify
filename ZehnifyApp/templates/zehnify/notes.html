@@ -1,0 +1,122 @@
+{% extends 'Zehnify/base.html' %}
+
+{% block title %}My Notepad | {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container notes-page-container">
+    
+    <!-- Clean Back Navigation -->
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">&larr; Back to {{ chapter.name }}</a>
+
+    <!-- Hero Banner -->
+    <section class="hero-banner notes-hero">
+        <span class="chapter-badge">Interactive Study Notepad</span>
+        <h1>{{ chapter.name }}</h1>
+        <p>Review core formulas and record your personal revision targets.</p>
+    </section>
+
+    <!-- 2-Column Balanced Layout -->
+    <div class="notepad-grid">
+        
+        <!-- Left Column: Formula Reference Sheet -->
+        <div class="formula-sheet-card">
+            <div class="formula-sheet-header">
+                <h3><span>&#128208;</span> Key Formula Sheet</h3>
+                <span class="admin-curated-badge">Admin Curated</span>
+            </div>
+
+            <!-- Hidden raw container holding django variable safely -->
+            <div id="raw-formulas-data" class="raw-data-hidden">{{ chapter.key_formulas|default:"" }}</div>
+
+            <!-- Rendered Output Box -->
+            <div id="rendered-formula-sheet" class="formula-sheet-box">
+                <span class="loading-formulas">Loading formulas...</span>
+            </div>
+        </div>
+
+        <!-- Right Column: Personal Reminders & Revision Goals Form -->
+        <form method="POST" class="notes-form">
+            {% csrf_token %}
+            
+            <div class="note-input-card">
+                <div class="note-card-header">
+                    <label for="id_reminders" class="note-label">
+                        <span>&#128161;</span> Concept Notes
+                    </label>
+                    <button type="button" onclick="clearField('id_reminders')" class="btn-clear-field">Clear</button>
+                </div>
+                <textarea name="reminders" id="id_reminders" rows="5" placeholder="Jot down tricky definitions or traps..." class="note-textarea">{{ note.reminders }}</textarea>
+            </div>
+
+            <div class="note-input-card">
+                <div class="note-card-header">
+                    <label for="id_goals" class="note-label">
+                        <span>&#127919;</span> Revision Goals
+                    </label>
+                    <button type="button" onclick="clearField('id_goals')" class="btn-clear-field">Clear</button>
+                </div>
+                <textarea name="goals" id="id_goals" rows="5" placeholder="What to master before the exam..." class="note-textarea">{{ note.goals }}</textarea>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="notes-footer">
+                <button type="submit" class="btn btn-primary">Save Notes</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    function clearField(elementId) {
+        if (confirm("Are you sure you want to clear this section?")) {
+            const textarea = document.getElementById(elementId);
+            textarea.value = '';
+            textarea.focus();
+        }
+    }
+
+    function renderAdminFormulas() {
+        const rawContainer = document.getElementById('raw-formulas-data');
+        const sheetContainer = document.getElementById('rendered-formula-sheet');
+        if (!rawContainer || !sheetContainer) return;
+
+        const content = rawContainer.textContent.trim();
+        sheetContainer.innerHTML = '';
+
+        if (!content) {
+            sheetContainer.innerHTML = '<span class="loading-formulas">No formulas added yet.</span>';
+            return;
+        }
+
+        const lines = content.split('\n');
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+
+            const formulaRow = document.createElement('div');
+            formulaRow.className = 'formula-row';
+
+            let formatted = trimmed
+                .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<span class="formula-frac"><span class="frac-numerator">$1</span><span class="frac-denominator">$2</span></span>')
+                .replace(/\\mu/g, '&mu;')
+                .replace(/\\tau/g, '&tau;')
+                .replace(/\\theta/g, '&theta;')
+                .replace(/\\cdot/g, '&middot;')
+                .replace(/\\sin/g, 'sin')
+                .replace(/_([a-zA-Z0-9])/g, '<sub>$1</sub>')
+                .replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
+                .replace(/\^([0-9])/g, '<sup>$1</sup>');
+
+            formulaRow.innerHTML = formatted;
+            sheetContainer.appendChild(formulaRow);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderAdminFormulas);
+    } else {
+        renderAdminFormulas();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}{{ lecture.title }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container watch-lecture-page">
+    
+    <!-- Back Navigation -->
+    <a href="{% url 'video_page' lecture.chapter.id %}" class="back-link">&larr; Back to {{ lecture.chapter.name }} Lectures</a>
+
+    <!-- Lecture Video Card -->
+    <div class="video-player-card">
+        <div class="video-header">
+            <span class="chapter-badge">{{ lecture.chapter.name }}</span>
+            <h1>{{ lecture.title }}</h1>
+        </div>
+
+        <!-- 16:9 Aspect Ratio Video Frame Container -->
+        <div class="video-frame-wrapper">
+            <iframe
+                src="https://www.youtube.com/embed/{{ lecture.url_path }}"
+                title="{{ lecture.title }}"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <!-- Video Player Toolbar / Fallback Link -->
+        <div class="video-footer-bar">
+            <p class="yt-fallback-text">
+                <span>Having trouble playing this video?</span>
+                <a href="https://www.youtube.com/watch?v={{ lecture.url_path }}" target="_blank" rel="noopener noreferrer" class="yt-external-link">
+                    Open directly on YouTube &nearr;
+                </a>
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

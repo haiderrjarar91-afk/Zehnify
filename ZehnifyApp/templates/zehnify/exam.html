@@ -1,0 +1,108 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}{{ chapter.name }} Exam | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container exam-page-container">
+    
+    <!-- Back Navigation -->
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">&larr; Back to {{ chapter.name }}</a>
+
+    <!-- Header Banner -->
+    <section class="hero-banner exam-hero">
+        <span class="chapter-badge badge-purple">Assessment</span>
+        <h1>{{ chapter.name }} - Final Exam</h1>
+        <p>Answer all questions carefully to evaluate your chapter mastery.</p>
+    </section>
+
+    <!-- Countdown Timer Bar -->
+    {% if mcqs %}
+        <div id="timer-container" class="exam-timer-container">
+            <span>&#9201; Time Remaining:</span> <span id="timer">--:--</span>
+        </div>
+    {% endif %}
+
+    <!-- Exam Form -->
+    <form id="exam-form" method="POST" class="exam-form">
+        {% csrf_token %}
+        
+        <div class="question-list">
+            {% for m in mcqs %}
+                <div class="question-card">
+                    <div class="question-header">
+                        <span class="q-number">Question {{ forloop.counter }}</span>
+                        <div class="q-text">{{ m.question_text|safe }}</div>
+                    </div>
+                    
+                    {% if m.diagram %}
+                        <div class="mcq-diagram-wrapper">
+                            <img src="{{ m.diagram.url }}" alt="Question Diagram" class="mcq-diagram-img">
+                        </div>
+                    {% endif %}
+
+                    <div class="options-group">
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="A" class="option-radio">
+                            <span class="option-text"><strong>A)</strong> {{ m.A|safe }}</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="B" class="option-radio">
+                            <span class="option-text"><strong>B)</strong> {{ m.B|safe }}</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="C" class="option-radio">
+                            <span class="option-text"><strong>C)</strong> {{ m.C|safe }}</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="D" class="option-radio">
+                            <span class="option-text"><strong>D)</strong> {{ m.D|safe }}</span>
+                        </label>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-data-card">
+                    <p class="no-data">No questions found for this exam.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if mcqs %}
+            <div class="exam-submit-row">
+                <button type="submit" class="btn-submit-exam">Submit Exam</button>
+            </div>
+        {% endif %}
+    </form>
+
+    {% if mcqs %}
+        <script>
+            // Calculate time: 60 seconds per question
+            const totalQuestions = parseInt("{{ mcqs|length }}") || 0;
+            let timeInSeconds = totalQuestions * 60; 
+
+            const timerDisplay = document.getElementById('timer');
+            const examForm = document.getElementById('exam-form');
+
+            function updateTimer() {
+                const minutes = Math.floor(timeInSeconds / 60);
+                const seconds = timeInSeconds % 60;
+
+                const formattedMinutes = String(minutes).padStart(2, '0');
+                const formattedSeconds = String(seconds).padStart(2, '0');
+
+                timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
+
+                if (timeInSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Time's up! Submitting your exam automatically.");
+                    examForm.submit();
+                } else {
+                    timeInSeconds--;
+                }
+            }
+
+            updateTimer();
+            const timerInterval = setInterval(updateTimer, 1000);
+        </script>
+    {% endif %}
+</div>
+{% endblock %}
