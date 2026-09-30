@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import timedelta
+from zoneinfo import ZoneInfo
 import re
 
 class UserProfile(models.Model):
@@ -35,7 +37,7 @@ class Chapter(models.Model):
     key_formulas = models.TextField(
         blank=True, 
         null=True, 
-        help_text="Enter LaTeX formulas, one per line (e.g., \sqrt{4} or \frac{a}{b})"
+        help_text=r"Enter LaTeX formulas, one per line (e.g., \sqrt{4} or \frac{a}{b})"
     )
     def __str__(self):
         return f"{self.name} ({self.grade}th)"
@@ -77,6 +79,7 @@ class MCQ(models.Model):
     master_explanation = models.TextField(blank=True, null=True)
     is_exam_question = models.BooleanField(default=False)
     diagram = models.ImageField(upload_to='mcq_diagrams/', blank=True, null=True)
+    subtopic = models.CharField(max_length=100, blank=True, default='')
 
     def __str__(self):
         return self.question_text
@@ -153,3 +156,46 @@ class ChapterNote(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - Notes for {self.chapter.name}"
+
+    from datetime import timedelta
+from zoneinfo import ZoneInfo
+
+PKT = ZoneInfo("Asia/Karachi")
+
+def get_user_streak(user):
+    """
+    Returns the user's current consecutive-day activity streak.
+    A day counts if the user watched a lecture, attempted a practice
+    question, or took an exam on that day (Pakistan local date).
+    """
+    mcq_dates = MCQAttempt.objects.filter(user=user).values_list('last_attempted', flat=True)
+    exam_dates = ExamAttempt.objects.filter(user=user).values_list('date_taken', flat=True)
+    video_dates = VideoProgress.objects.filter(user=user).values_list('watched_at', flat=True)
+
+    all_local_dates = set()
+    for dt in list(mcq_dates) + list(exam_dates) + list(video_dates):
+        if dt is not None:
+            all_local_dates.add(dt.astimezone(PKT).date())
+
+    if not all_local_dates:
+        return 0
+
+    today = timezone.now().astimezone(PKT).date()
+    sorted_dates = sorted(all_local_dates, reverse=True)
+
+    # Streak only counts as "current" if the most recent activity was
+    # today or yesterday — otherwise it's broken, not just paused
+    if sorted_dates[0] not in (today, today - timedelta(days=1)):
+        return 0
+
+    streak = 1
+    for i in range(len(sorted_dates) - 1):
+        gap = (sorted_dates[i] - sorted_dates[i + 1]).days
+        if gap == 1:
+            streak += 1
+        elif gap == 0:
+            continue  # shouldn't happen since it's a set, but harmless
+        else:
+            break
+
+    return streak

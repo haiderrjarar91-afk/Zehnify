@@ -6,7 +6,8 @@ from django.views.decorators.http import require_POST
 from .models import (
     Chapter, MCQ, ChapterVideo, Subject, 
     Userchaptermastery, VideoProgress, UserAnswer, 
-    ExamAttempt, UserProfile, MCQAttempt, ChapterNote
+    ExamAttempt, UserProfile, MCQAttempt, ChapterNote,
+    get_user_streak
 )
 from .forms import StudentRegisterationForm
 
@@ -58,8 +59,10 @@ def home(request):
             'subject': subject,
             'subject_mastery': subject_mastery
         })    
-            
-    context = {'subject_data': subject_data, 'subjects': subjects}    
+
+    streak = get_user_streak(request.user)
+
+    context = {'subject_data': subject_data, 'subjects': subjects, 'streak': streak}    
     return render(request, 'zehnify/home.html', context)
 
 

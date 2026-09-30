@@ -7,9 +7,16 @@
     
     <!-- Hero Banner Section -->
     <section class="hero-banner">
-        <h1>Welcome Back!</h1>
-        <p>Select a subject to continue your learning journey.</p>
-    </section>
+    <h1>Welcome Back!</h1>
+    <p>Select a subject to continue your learning journey.</p>
+    {% if streak > 0 %}
+        <div class="streak-badge">
+            <span class="streak-flame">&#128293;</span>
+            <span class="streak-count">{{ streak }}</span>
+            <span class="streak-label">day{{ streak|pluralize }} streak</span>
+        </div>
+    {% endif %}
+</section>
 
     <!-- Section Header -->
     <div class="section-header">
