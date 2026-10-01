@@ -6,15 +6,88 @@
 <div class="page-container exam-review-page-container">
     
     <!-- Back Navigation -->
-    <a href="{% url 'details_page' attempt.chapter.id %}" class="back-link">&larr; Back to {{ attempt.chapter.name }}</a>
+    <a href="{% url 'details_page' attempt.chapter.id %}" class="back-link">
+        &larr; Back to {{ attempt.chapter.name }}
+    </a>
 
     <!-- Header Banner -->
     <section class="hero-banner exam-review-hero">
         <span class="chapter-badge badge-purple">Review Mode</span>
         <h1>{{ attempt.chapter.name }} - Exam Results</h1>
-        <p class="exam-score-text">Score: <strong>{{ attempt.score }} / {{ attempt.total_questions }}</strong> ({{ attempt.percentage }}%)</p>
+        <p class="exam-score-text">
+            Review your performance and identify the areas to revisit.
+        </p>
     </section>
 
+    <!-- Results Dashboard -->
+    <section class="exam-results-grid">
+
+        <!-- Weak Areas -->
+        <div class="results-card weakness-card">
+            <div class="results-card-header">
+                <div>
+                    <span class="results-eyebrow">Performance breakdown</span>
+                    <h2>Weak Areas</h2>
+                </div>
+            </div>
+
+            {% if weakness_list %}
+                <div class="weakness-chart">
+                    {% for item in weakness_list %}
+                        <div class="weakness-item">
+
+                            <div class="weakness-meta">
+                                <span class="weakness-topic">
+                                    {{ item.subtopic }}
+                                </span>
+
+                                <span class="weakness-stats">
+                                    {{ item.wrong }}/{{ item.total }} wrong
+                                    · {{ item.incorrect_percentage }}%
+                                </span>
+                            </div>
+
+                            <div
+                                class="weakness-bar-bg"
+                                role="img"
+                                aria-label="{{ item.subtopic }}: {{ item.incorrect_percentage }}% incorrect"
+                            >
+                                <div
+                                    class="weakness-bar-fill"
+                                    style="--weakness-width: {{ item.incorrect_percentage }}%;"
+                                ></div>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="weakness-empty">
+                    <span class="weakness-empty-icon">✓</span>
+                    <p>No weak areas identified in this exam.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Your Score -->
+        <div class="results-card score-card">
+            <span class="results-eyebrow">Your Score</span>
+
+            <div class="score-value">
+                {{ attempt.score }}
+                <span>/ {{ attempt.total_questions }}</span>
+            </div>
+
+            <div class="score-percentage">
+                {{ attempt.percentage }}%
+            </div>
+
+            <p>Overall exam performance</p>
+        </div>
+
+    </section>
+
+    <!-- Question-by-Question Review -->
     <div class="question-list">
         {% for ans in answers %}
             <div class="question-card review-card {% if ans.is_correct %}card-pass{% else %}card-fail{% endif %}">
@@ -25,7 +98,11 @@
                 
                 {% if ans.mcq.diagram %}
                     <div class="mcq-diagram-wrapper">
-                        <img src="{{ ans.mcq.diagram.url }}" alt="Question Diagram" class="mcq-diagram-img">
+                        <img
+                            src="{{ ans.mcq.diagram.url }}"
+                            alt="Question Diagram"
+                            class="mcq-diagram-img"
+                        >
                     </div>
                 {% endif %}
 
@@ -40,8 +117,10 @@
                                 <em>Unanswered</em>
                             {% endif %}
                         </span>
+
                         <span class="correct-answer-pill-review">
-                            Correct Answer: <strong>Option {{ ans.mcq.correct_option }}</strong>
+                            Correct Answer:
+                            <strong>Option {{ ans.mcq.correct_option }}</strong>
                         </span>
                     </div>
                 </div>
@@ -53,11 +132,15 @@
                     </div>
                 {% endif %}
             </div>
+
         {% empty %}
             <div class="no-data-card">
-                <p class="no-data">No review answers found for this exam attempt.</p>
+                <p class="no-data">
+                    No review answers found for this exam attempt.
+                </p>
             </div>
         {% endfor %}
     </div>
+
 </div>
 {% endblock %}

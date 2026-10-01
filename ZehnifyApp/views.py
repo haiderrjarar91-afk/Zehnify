@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from collections import defaultdict
+from urllib.parse import quote
 
 from .models import (
     Chapter, MCQ, ChapterVideo, Subject, 
@@ -68,7 +70,6 @@ def home(request):
 
 @login_required
 def sub_details(request, subject_id):
-    # HARDENED: Guarantees user can only view subjects matching their stream scope
     try:
         user_stream = request.user.userprofile.stream
     except UserProfile.DoesNotExist:
@@ -76,7 +77,6 @@ def sub_details(request, subject_id):
 
     subject = get_object_or_404(Subject, id=subject_id, stream__in=[user_stream, 'BOTH'])
     
-    # SPLIT CHAPTERS: Separates chapters into 11th and 12th grade columns for all users
     chapters_11th = Chapter.objects.filter(subject=subject, grade=11)
     chapters_12th = Chapter.objects.filter(subject=subject, grade=12)
 
@@ -93,13 +93,12 @@ def chapterdetail(request, chapter_id):
     mastery_record = Userchaptermastery.objects.filter(user=request.user, chapter=chapter).first()
     mastery = mastery_record.percentage if mastery_record else 0
     
-    # FIXED: Order by -date_taken to ensure the latest retake is fetched instead of the oldest first attempt
     latest_attempt = ExamAttempt.objects.filter(user=request.user, chapter=chapter).order_by('-date_taken').first()
 
     return render(request, 'zehnify/chapter_detail.html', {
         'chapter': chapter,
         'mastery': mastery,
-        'mastery_width': f"{mastery}%",  # Pre-formatted string
+        'mastery_width': f"{mastery}%",
         'latest_attempt': latest_attempt,
     })
 
@@ -109,8 +108,17 @@ def practice(request, chapter_id):
     practice_mcqs = MCQ.objects.filter(chapter=chapter, is_exam_question=False)
     
     filter_type = request.GET.get('filter', 'all')
-    
-    # Fetch all attempts for this user and chapter in a single efficient query
+    selected_subtopic = request.GET.get('subtopic', '')
+
+    # Precise, chapter-specific list — only subtopic values that actually
+    # exist among this chapter's practice questions, nothing invented
+    available_subtopics = (
+        practice_mcqs.exclude(subtopic='')
+        .values_list('subtopic', flat=True)
+        .distinct()
+        .order_by('subtopic')
+    )
+
     user_attempts = {
         attempt.mcq_id: attempt 
         for attempt in MCQAttempt.objects.filter(user=request.user, mcq__chapter=chapter)
@@ -135,15 +143,20 @@ def practice(request, chapter_id):
                     attempt.is_correct = (selected_option == mcq.correct_option)
                     attempt.save()
 
-        return redirect(f"{request.path}?filter={filter_type}")
+        redirect_url = f"{request.path}?filter={filter_type}"
+        if filter_type == 'subtopic' and selected_subtopic:
+            redirect_url += f"&subtopic={quote(selected_subtopic)}"
+        return redirect(redirect_url)
 
-    # Build question data list with sequence numbers
     mcq_data = []
     for index, m in enumerate(practice_mcqs, start=1):
         attempt = user_attempts.get(m.id)
         
         if filter_type == 'flagged':
             if not attempt or attempt.is_correct:
+                continue
+        elif filter_type == 'subtopic':
+            if not selected_subtopic or m.subtopic != selected_subtopic:
                 continue
 
         mcq_data.append({
@@ -156,6 +169,8 @@ def practice(request, chapter_id):
         'mcq_data': mcq_data, 
         'chapter': chapter,
         'current_filter': filter_type,
+        'available_subtopics': available_subtopics,
+        'selected_subtopic': selected_subtopic,
     }
     return render(request, 'zehnify/practice.html', context)
 
@@ -243,7 +258,6 @@ def Exam(request, chapter_id):
             defaults={'score': score, 'percentage': percentage}
         )
 
-        # Redirect directly to the dedicated review view passing both chapter.id and attempt.id
         return redirect('exam_review', chapter_id=chapter.id, attempt_id=attempt.id)
 
     return render(request, 'zehnify/exam.html', {
@@ -256,14 +270,56 @@ def Exam(request, chapter_id):
 @login_required
 def exam_review(request, chapter_id, attempt_id):
     chapter = get_object_or_404(Chapter, id=chapter_id)
-    attempt = get_object_or_404(ExamAttempt, id=attempt_id, chapter=chapter, user=request.user)
+    attempt = get_object_or_404(
+        ExamAttempt,
+        id=attempt_id,
+        chapter=chapter,
+        user=request.user
+    )
     answers = attempt.user_answers.select_related('mcq').all()
+
+    # Group this attempt's answers by subtopic.
+    # A weak area is any subtopic where the student got at least
+    # one question wrong.
+    subtopic_stats = defaultdict(lambda: {'wrong': 0, 'total': 0})
+
+    for ans in answers:
+        subtopic = ans.mcq.subtopic or 'Uncategorized'
+
+        subtopic_stats[subtopic]['total'] += 1
+
+        if not ans.is_correct:
+            subtopic_stats[subtopic]['wrong'] += 1
+
+    weakness_list = [
+        {
+            'subtopic': subtopic,
+            'wrong': stats['wrong'],
+            'total': stats['total'],
+            'incorrect_percentage': round(
+                (stats['wrong'] / stats['total']) * 100
+            ) if stats['total'] else 0,
+        }
+        for subtopic, stats in subtopic_stats.items()
+        if stats['wrong'] > 0
+    ]
+
+    # Sort primarily by percentage incorrect so that a subtopic
+    # with fewer questions is not unfairly ranked below one simply
+    # because the latter had more questions.
+    weakness_list.sort(
+        key=lambda item: (
+            item['incorrect_percentage'],
+            item['wrong']
+        ),
+        reverse=True
+    )
 
     return render(request, 'zehnify/exam_review.html', {
         'attempt': attempt,
         'answers': answers,
+        'weakness_list': weakness_list,
     })
-
 
 @login_required
 @require_POST

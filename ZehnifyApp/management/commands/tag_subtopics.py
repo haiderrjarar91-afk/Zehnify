@@ -14,65 +14,99 @@ Run modes:
 Usage:
   python manage.py tag_subtopics --dry-run
   python manage.py tag_subtopics --dry-run --chapter-id 5   (test one chapter only)
-  python manage.py tag_subtopics                            (the real, paid run)
+  python manage.py tag_subtopics --chapter-id 1             (real run, one chapter, costs a few cents)
+  python manage.py tag_subtopics                            (the real, full paid run)
 """
 
+import json
 from django.core.management.base import BaseCommand
 from ZehnifyApp.models import Chapter, MCQ
+import anthropic
+
+client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment automatically
 
 
 # ---------------------------------------------------------------------------
-# STAGE 1: generate a chapter's subtopic list
+# STAGE 1: generate a chapter's subtopic list (Sonnet — runs 34 times total)
 # ---------------------------------------------------------------------------
 
 def generate_subtopics_stub(chapter):
-    """Fake version — returns placeholder subtopics so the pipeline can be
-    tested for free. Replace generate_subtopics() below with a real call
-    when ready to spend money."""
     return [f"{chapter.name} - Topic {i}" for i in range(1, 5)]
 
 
 def generate_subtopics_real(chapter):
-    """TODO tonight: call the LLM here.
-    Prompt should include chapter.name and chapter.subject.name, and ask
-    for 4-8 short, mutually exclusive subtopic labels as a JSON list.
-    Must return a plain Python list of strings."""
-    raise NotImplementedError("Wire up the real API call here tonight")
+    prompt = f"""This is a chapter called "{chapter.name}" from a {chapter.subject.name} course, \
+for Pakistani intermediate-level (11th/12th grade) students preparing for competitive entry exams \
+(ECAT/MDCAT).
+
+Break this chapter down into 4 to 8 distinct, commonly-tested sub-topics.
+
+Respond with ONLY a JSON array of short string labels. No explanation, no markdown fences, \
+no extra text. Example format: ["Label One", "Label Two", "Label Three"]"""
+
+    response = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=300,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw_text = next((block.text for block in response.content if block.type == "text"), "").strip()
+
+    try:
+        subtopics = json.loads(raw_text)
+        if isinstance(subtopics, list) and all(isinstance(s, str) for s in subtopics) and subtopics:
+            return subtopics
+    except (json.JSONDecodeError, IndexError):
+        pass
+
+    # Fallback: parsing failed or shape was wrong — don't crash the whole run
+    return ["General"]
 
 
 # ---------------------------------------------------------------------------
-# STAGE 2: classify one MCQ against its chapter's subtopic list
+# STAGE 2: classify one MCQ against its chapter's subtopic list (Haiku — runs
+# once per MCQ, ~4,866 times total)
 # ---------------------------------------------------------------------------
 
 def classify_mcq_stub(mcq, subtopic_list):
-    """Fake version — just picks the first subtopic in the list every time.
-    Replace classify_mcq() below with a real call when ready."""
     return subtopic_list[0] if subtopic_list else "Uncategorized"
 
 
 def classify_mcq_real(mcq, subtopic_list):
-    """TODO tonight: call the LLM here.
-    Prompt should include mcq.question_text, options A-D, and the
-    constrained subtopic_list. Must return exactly one label from that
-    list, or 'Uncategorized' if it doesn't fit / the call fails."""
-    raise NotImplementedError("Wire up the real API call here tonight")
+    options_block = f"A) {mcq.A}\nB) {mcq.B}\nC) {mcq.C}\nD) {mcq.D}"
+    labels_block = "\n".join(f"- {s}" for s in subtopic_list)
+
+    prompt = f"""Question: {mcq.question_text}
+
+{options_block}
+
+Allowed sub-topics (choose exactly one, copying it EXACTLY as written below):
+{labels_block}
+
+Respond with ONLY the exact matching sub-topic label. No explanation, no punctuation, no quotes."""
+
+    try:
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=50,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        label = next((block.text for block in response.content if block.type == "text"), "").strip()
+    except Exception:
+        return "Uncategorized"
+
+    # Strict match required — anything else (paraphrase, extra text, hallucinated
+    # label) falls back rather than fragmenting the aggregation later
+    if label in subtopic_list:
+        return label
+    return "Uncategorized"
 
 
 class Command(BaseCommand):
     help = "Tag every MCQ with a subtopic, chapter by chapter."
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--dry-run",
-            action="store_true",
-            help="Use free stub functions instead of real LLM calls.",
-        )
-        parser.add_argument(
-            "--chapter-id",
-            type=int,
-            default=None,
-            help="Only process this one chapter (for testing).",
-        )
+        parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument("--chapter-id", type=int, default=None)
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
@@ -90,6 +124,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Chapters to process: {chapters.count()}")
 
         total_tagged = 0
+        uncategorized_count = 0
 
         for chapter in chapters:
             mcqs = MCQ.objects.filter(chapter=chapter)
@@ -97,27 +132,16 @@ class Command(BaseCommand):
                 continue
 
             self.stdout.write(f"\n--- {chapter.name} ({mcqs.count()} MCQs) ---")
-
-            try:
-                subtopics = generate_subtopics(chapter)
-            except NotImplementedError as e:
-                self.stdout.write(self.style.ERROR(f"  Skipped: {e}"))
-                continue
-
+            subtopics = generate_subtopics(chapter)
             self.stdout.write(f"  Subtopics: {subtopics}")
 
             for mcq in mcqs:
-                try:
-                    label = classify_mcq(mcq, subtopics)
-                except NotImplementedError as e:
-                    self.stdout.write(self.style.ERROR(f"  Skipped: {e}"))
-                    break
-                except Exception as e:
-                    label = "Uncategorized"
-                    self.stdout.write(self.style.WARNING(f"  MCQ {mcq.id} failed, using fallback: {e}"))
-
+                label = classify_mcq(mcq, subtopics)
+                if label == "Uncategorized":
+                    uncategorized_count += 1
                 mcq.subtopic = label
                 mcq.save(update_fields=["subtopic"])
                 total_tagged += 1
 
         self.stdout.write(self.style.SUCCESS(f"\nDone. Tagged {total_tagged} MCQs."))
+        self.stdout.write(f"Uncategorized (fallback) count: {uncategorized_count}")

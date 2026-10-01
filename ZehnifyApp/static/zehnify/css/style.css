@@ -2121,3 +2121,233 @@ label {
 .explanation-box strong {
   color: var(--color-text-primary);
 }
+
+/*.........................................................*/
+
+/* --- Weakness summary (exam_review.html) --- */
+.weakness-summary-accordion {
+  margin: var(--space-lg) 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.weakness-summary-trigger {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--color-primary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.weakness-summary-trigger::-webkit-details-marker { display: none; }
+
+.weakness-summary-content {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.weakness-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background-color: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  color: inherit;
+  text-decoration: none;
+  transition: transform var(--transition-fast);
+}
+
+.weakness-row:hover {
+  transform: translateX(2px);
+  text-decoration: none;
+}
+
+.weakness-subtopic {
+  font-weight: var(--fw-medium);
+  color: var(--color-text-primary);
+}
+
+.weakness-count {
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+  font-weight: var(--fw-semibold);
+}
+
+.weakness-arrow {
+  color: var(--color-danger);
+}
+
+/* --- Subtopic filter dropdown (practice.html) --- */
+.subtopic-filter-select {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+}
+
+/* --- Exam results dashboard --- */
+
+.exam-results-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: var(--space-lg);
+  margin: var(--space-xl) 0;
+  align-items: stretch;
+}
+
+.results-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+}
+
+.results-card-header {
+  margin-bottom: var(--space-lg);
+}
+
+.results-eyebrow {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-xs);
+}
+
+.results-card h2 {
+  font-size: var(--fs-lg);
+}
+
+.weakness-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.weakness-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.weakness-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.weakness-topic {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-primary);
+}
+
+.weakness-stats {
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+}
+
+.weakness-bar-bg {
+  width: 100%;
+  height: 9px;
+  background-color: var(--color-danger-bg);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.weakness-bar-fill {
+  width: var(--weakness-width, 0%);
+  height: 100%;
+  background-color: var(--color-danger);
+  border-radius: inherit;
+  transition: width var(--transition-base);
+}
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  min-height: 220px;
+}
+
+.score-card .score-value {
+  font-size: 2.75rem;
+  line-height: 1;
+  font-weight: var(--fw-bold);
+  color: var(--color-primary);
+  margin-top: var(--space-md);
+}
+
+.score-card .score-value span {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+}
+
+.score-card .score-percentage {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-primary);
+  margin-top: var(--space-sm);
+}
+
+.score-card p {
+  font-size: var(--fs-sm);
+  margin-top: var(--space-sm);
+}
+
+.weakness-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background-color: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+}
+
+.weakness-empty-icon {
+  color: var(--color-success);
+  font-weight: var(--fw-bold);
+}
+
+.weakness-empty p {
+  font-size: var(--fs-sm);
+  color: var(--color-success);
+}
+
+@media (max-width: 768px) {
+  .exam-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-card {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .weakness-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+}

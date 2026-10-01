@@ -19,6 +19,14 @@
     <div class="practice-filter-bar">
         <a href="?filter=all" class="filter-tab {% if current_filter == 'all' %}active{% endif %}">All Questions</a>
         <a href="?filter=flagged" class="filter-tab {% if current_filter == 'flagged' %}active{% endif %}">Flagged for Review &times;</a>
+        {% if available_subtopics %}
+            <select class="subtopic-filter-select" onchange="if(this.value){window.location.href='?filter=subtopic&subtopic='+encodeURIComponent(this.value);}else{window.location.href='?filter=all';}">
+                <option value="" {% if current_filter != 'subtopic' %}selected{% endif %}>Filter by Sub-topic...</option>
+                {% for s in available_subtopics %}
+                    <option value="{{ s }}" {% if current_filter == 'subtopic' and selected_subtopic == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        {% endif %}
     </div>
 
     <!-- Practice Questions Container -->
@@ -38,11 +46,9 @@
                         </div>
                     {% endif %}
 
-                    <!-- Interactive Options Form -->
                     <form method="POST" class="practice-option-form" id="form-q{{ m.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="mcq_id" value="{{ m.id }}">
-                        <!-- Stores previous attempt value internally for state handling, but hidden visually from the options layout until selected -->
                         <input type="hidden" name="selected_option" id="selected-input-{{ m.id }}" value="{{ attempt.selected_option }}">
 
                         <div class="practice-options">
@@ -68,7 +74,6 @@
                         </div>
                     </form>
 
-                    <!-- Expandable Explanation Accordion (Closed by default) -->
                     <details class="explanation-accordion">
                         <summary class="accordion-trigger">
                             <span>&#128161; Show Answer & Explanation</span>
