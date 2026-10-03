@@ -34,7 +34,12 @@
             {% if weakness_list %}
                 <div class="weakness-chart">
                     {% for item in weakness_list %}
+
+                        {% if item.subtopic != 'Uncategorized' %}
+                        <a href="{% url 'learn_subtopic' chapter_id=attempt.chapter.id subtopic=item.subtopic %}" class="weakness-item weakness-link">
+                        {% else %}
                         <div class="weakness-item">
+                        {% endif %}
 
                             <div class="weakness-meta">
                                 <span class="weakness-topic">
@@ -58,7 +63,16 @@
                                 ></div>
                             </div>
 
+                            {% if item.subtopic != 'Uncategorized' %}
+                                <span class="weakness-cta">Review this sub-topic &rarr;</span>
+                            {% endif %}
+
+                        {% if item.subtopic != 'Uncategorized' %}
+                        </a>
+                        {% else %}
                         </div>
+                        {% endif %}
+
                     {% endfor %}
                 </div>
             {% else %}

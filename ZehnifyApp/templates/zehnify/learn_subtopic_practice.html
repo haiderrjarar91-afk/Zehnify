@@ -1,0 +1,221 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Practice {{ subtopic }} | {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+
+<div class="page-container learn-practice-page">
+
+    <!-- Back Navigation -->
+    <a
+        href="{% url 'learn_subtopic' chapter_id=chapter.id subtopic=subtopic %}"
+        class="back-link"
+    >
+        &larr; Back to {{ subtopic }}
+    </a>
+
+    <!-- Header -->
+    <section class="hero-banner learn-practice-hero">
+
+        <div>
+
+            <span class="chapter-badge badge-green">
+                20-Question Practice
+            </span>
+
+            <h1>{{ subtopic }}</h1>
+
+            <p>
+                Focus completely on this sub-topic. Work through all
+                20 questions and see how strong your understanding is.
+            </p>
+
+        </div>
+
+        <div class="learn-practice-hero-count">
+            <strong>20</strong>
+            <span>questions</span>
+        </div>
+
+    </section>
+
+    {% if error %}
+
+        <div class="no-data-card learn-practice-error">
+
+            <h3>Practice set unavailable</h3>
+
+            <p>{{ error }}</p>
+
+            <a
+                href="{% url 'learn_subtopic' chapter_id=chapter.id subtopic=subtopic %}"
+                class="btn btn-primary"
+            >
+                Back to Learning
+            </a>
+
+        </div>
+
+    {% else %}
+
+        <div class="learn-practice-intro">
+
+            <div>
+                <span class="learn-section-kicker">PRACTICE CHECKPOINT</span>
+                <h2>Test yourself</h2>
+            </div>
+
+            <p>
+                Choose the answer you think is correct for each question.
+                Unanswered questions are counted as incorrect.
+            </p>
+
+        </div>
+
+        <form method="POST" class="learn-practice-form">
+
+            {% csrf_token %}
+
+            <div class="learn-practice-question-list">
+
+                {% for question in questions %}
+
+                    <div class="practice-card learn-practice-question">
+
+                        <div class="practice-q-header">
+
+                            <span class="q-badge">
+                                Question {{ forloop.counter }} / 20
+                            </span>
+
+                            <div class="q-text">
+                                {{ question.question_text|safe }}
+                            </div>
+
+                        </div>
+
+                        {% if question.diagram %}
+
+                            <div class="mcq-diagram-wrapper">
+
+                                <img
+                                    src="{{ question.diagram.url }}"
+                                    alt="Diagram for question {{ forloop.counter }}"
+                                    class="mcq-diagram-img"
+                                >
+
+                            </div>
+
+                        {% endif %}
+
+                        <div class="practice-options">
+
+                            <label class="p-option">
+                                <input
+                                    type="radio"
+                                    name="Q{{ question.id }}"
+                                    value="A"
+                                >
+                                <strong class="p-option-letter">A</strong>
+                                <span class="p-option-text">{{ question.A|safe }}</span>
+                            </label>
+
+                            <label class="p-option">
+                                <input
+                                    type="radio"
+                                    name="Q{{ question.id }}"
+                                    value="B"
+                                >
+                                <strong class="p-option-letter">B</strong>
+                                <span class="p-option-text">{{ question.B|safe }}</span>
+                            </label>
+
+                            <label class="p-option">
+                                <input
+                                    type="radio"
+                                    name="Q{{ question.id }}"
+                                    value="C"
+                                >
+                                <strong class="p-option-letter">C</strong>
+                                <span class="p-option-text">{{ question.C|safe }}</span>
+                            </label>
+
+                            <label class="p-option">
+                                <input
+                                    type="radio"
+                                    name="Q{{ question.id }}"
+                                    value="D"
+                                >
+                                <strong class="p-option-letter">D</strong>
+                                <span class="p-option-text">{{ question.D|safe }}</span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="learn-practice-submit">
+
+                <div class="learn-submit-note">
+                    <strong>Ready to see your result?</strong>
+                    <span>
+                        <b id="learn-answered-count">0</b> of 20 answered
+                    </span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Submit Practice Set &rarr;
+                </button>
+
+            </div>
+
+        </form>
+
+        <script>
+            (function () {
+                var form = document.querySelector('.learn-practice-form');
+                var counter = document.getElementById('learn-answered-count');
+                if (!form || !counter) { return; }
+
+                var total = 20;
+
+                function answeredCount() {
+                    var names = {};
+                    form.querySelectorAll('input[type="radio"]:checked').forEach(function (radio) {
+                        names[radio.name] = true;
+                    });
+                    return Object.keys(names).length;
+                }
+
+                function update() {
+                    counter.textContent = answeredCount();
+                }
+
+                form.addEventListener('change', update);
+
+                form.addEventListener('submit', function (event) {
+                    var left = total - answeredCount();
+                    if (left > 0) {
+                        var message =
+                            'You have ' + left + ' unanswered question' +
+                            (left === 1 ? '' : 's') +
+                            '. Unanswered questions count as incorrect. Submit anyway?';
+                        if (!window.confirm(message)) {
+                            event.preventDefault();
+                        }
+                    }
+                });
+
+                update();
+            })();
+        </script>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

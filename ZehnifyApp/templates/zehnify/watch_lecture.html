@@ -6,7 +6,11 @@
 <div class="page-container watch-lecture-page">
     
     <!-- Back Navigation -->
-    <a href="{% url 'video_page' lecture.chapter.id %}" class="back-link">&larr; Back to {{ lecture.chapter.name }} Lectures</a>
+    {% if lecture.subtopic %}
+        <a href="{% url 'learn_subtopic' chapter_id=lecture.chapter.id subtopic=lecture.subtopic %}" class="back-link">&larr; Back to {{ lecture.subtopic }}</a>
+    {% else %}
+        <a href="{% url 'learn_page' chapter_id=lecture.chapter.id %}" class="back-link">&larr; Back to {{ lecture.chapter.name }}</a>
+    {% endif %}
 
     <!-- Lecture Video Card -->
     <div class="video-player-card">

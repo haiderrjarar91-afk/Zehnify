@@ -20,11 +20,18 @@
             </summary>
             <div class="weakness-summary-content">
                 {% for w in weakness_list %}
-                    <a href="{% url 'practice_page' attempt.chapter.id %}?filter=subtopic&subtopic={{ w.subtopic|urlencode }}" class="weakness-row">
-                        <span class="weakness-subtopic">{{ w.subtopic }}</span>
-                        <span class="weakness-count">{{ w.wrong }}/{{ w.total }} wrong</span>
-                        <span class="weakness-arrow">&rarr;</span>
-                    </a>
+                    {% if w.subtopic == 'Uncategorized' %}
+                        <div class="weakness-row">
+                            <span class="weakness-subtopic">{{ w.subtopic }}</span>
+                            <span class="weakness-count">{{ w.wrong }}/{{ w.total }} wrong</span>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'learn_subtopic' chapter_id=attempt.chapter.id subtopic=w.subtopic %}" class="weakness-row">
+                            <span class="weakness-subtopic">{{ w.subtopic }}</span>
+                            <span class="weakness-count">{{ w.wrong }}/{{ w.total }} wrong</span>
+                            <span class="weakness-arrow">&rarr;</span>
+                        </a>
+                    {% endif %}
                 {% endfor %}
             </div>
         </details>

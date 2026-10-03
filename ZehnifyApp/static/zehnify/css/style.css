@@ -227,6 +227,11 @@ small, .text-muted {
               box-shadow var(--transition-fast);
 }
 
+/* Links styled as buttons must not pick up the global a:hover underline */
+.btn:hover {
+  text-decoration: none;
+}
+
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -238,9 +243,12 @@ small, .text-muted {
   border-color: var(--color-primary);
 }
 
+/* color is set here too: without it, a.btn-primary:hover inherits the global
+   a:hover colour (primary-dark) and the label disappears on the dark background */
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
+  color: var(--color-text-on-primary);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -271,6 +279,12 @@ small, .text-muted {
 .btn-sm {
   padding: 0.4rem 0.85rem;
   font-size: var(--fs-xs);
+}
+
+.btn-lg {
+  padding: 0.85rem 1.6rem;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
 }
 
 
@@ -2244,6 +2258,28 @@ label {
   gap: var(--space-xs);
 }
 
+/* Weak-area rows that link into the matching Learn sub-topic page */
+.weakness-link {
+  padding: var(--space-sm) var(--space-md);
+  margin-inline: calc(var(--space-md) * -1);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+}
+
+.weakness-link:hover {
+  background-color: var(--color-danger-bg);
+  color: inherit;
+  text-decoration: none;
+}
+
+.weakness-cta {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-primary);
+}
+
 .weakness-meta {
   display: flex;
   align-items: baseline;
@@ -2409,4 +2445,852 @@ label {
 /* --- Session shortage notice --- */
 .mixed-practice-shortage-notice {
   margin-bottom: var(--space-lg);
+}
+
+/* ==========================================================================
+   LEARN / LEARNING PATH
+   Pages: learn.html, learn_subtopic.html, learn_subtopic_practice.html
+   Every var(--...) below is a real token from :root.
+   ========================================================================== */
+
+.learn-page-container,
+.learn-subtopic-page,
+.learn-practice-page {
+    padding-bottom: 48px;
+}
+
+/* --- Heroes ------------------------------------------------------------ */
+
+.learn-hero,
+.learn-subtopic-hero,
+.learn-practice-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Keep hero content above the decorative circle from .hero-banner::after */
+.learn-hero > *,
+.learn-subtopic-hero > *,
+.learn-practice-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.learn-hero-content {
+    max-width: 760px;
+}
+
+.learn-hero h1,
+.learn-subtopic-hero h1,
+.learn-practice-hero h1 {
+    margin-bottom: 10px;
+}
+
+.learn-hero p,
+.learn-subtopic-hero p,
+.learn-practice-hero p {
+    max-width: 700px;
+}
+
+.learn-hero-icon,
+.learn-subtopic-hero-icon {
+    flex-shrink: 0;
+    width: 76px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: var(--color-text-on-primary);
+    font-size: 26px;
+}
+
+.learn-practice-hero-count {
+    flex-shrink: 0;
+    min-width: 108px;
+    text-align: center;
+    padding: 18px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.learn-practice-hero-count strong {
+    display: block;
+    color: var(--color-text-on-primary);
+    font-size: 30px;
+    line-height: 1;
+}
+
+.learn-practice-hero-count span {
+    display: block;
+    margin-top: 5px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.chapter-badge.badge-blue {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* --- Section headers --------------------------------------------------- */
+
+.learn-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 18px;
+}
+
+.learn-section-kicker {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--color-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.learn-section-header .subjects-title {
+    margin-bottom: 0;
+}
+
+.learn-section-hint {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* --- Sub-topic grid (learn.html) -------------------------------------- */
+
+.learn-subtopics-section {
+    margin-top: 30px;
+}
+
+.learn-subtopic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.learn-subtopic-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 205px;
+    padding: 22px;
+    border: 1px solid var(--color-border);
+    border-top: 4px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    transition:
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.learn-subtopic-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+}
+
+/* Mastery state: accent colour on the top edge, the number and the bar.
+   These come after :hover so the top accent survives hovering. */
+.learn-subtopic-card.is-strong { border-top-color: var(--color-success); }
+.learn-subtopic-card.is-mid    { border-top-color: var(--color-warning); }
+.learn-subtopic-card.is-weak   { border-top-color: var(--color-danger); }
+
+.learn-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.learn-subtopic-number {
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.learn-subtopic-main {
+    flex: 1;
+    margin-top: 18px;
+}
+
+.learn-subtopic-main h3 {
+    margin: 0 0 16px;
+    color: var(--color-text-primary);
+    font-size: 17px;
+    line-height: 1.4;
+}
+
+.learn-mastery-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 9px;
+}
+
+.learn-mastery-display strong {
+    color: var(--color-primary);
+    font-size: 22px;
+    line-height: 1;
+}
+
+.learn-mastery-display span {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.learn-mastery-display.is-empty strong {
+    color: var(--color-text-muted);
+}
+
+.learn-subtopic-card.is-strong .learn-mastery-display strong { color: var(--color-success); }
+.learn-subtopic-card.is-mid .learn-mastery-display strong    { color: var(--color-warning); }
+.learn-subtopic-card.is-weak .learn-mastery-display strong   { color: var(--color-danger); }
+
+.learn-progress-track {
+    width: 100%;
+    height: 7px;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+}
+
+.learn-progress-fill {
+    /* --mastery-width is a bare number (e.g. 65), set inline by the template */
+    width: calc(var(--mastery-width, 0) * 1%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-primary);
+    transition: width var(--transition-base);
+}
+
+.learn-subtopic-card.is-strong .learn-progress-fill { background: var(--color-success); }
+.learn-subtopic-card.is-mid .learn-progress-fill    { background: var(--color-warning); }
+.learn-subtopic-card.is-weak .learn-progress-fill   { background: var(--color-danger); }
+
+.learn-subtopic-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.learn-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.learn-meta-icon {
+    color: var(--color-primary);
+}
+
+.learn-card-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: 16px;
+    transition: transform var(--transition-fast);
+}
+
+.learn-subtopic-card:hover .learn-card-arrow {
+    transform: translateX(3px);
+}
+
+/* "In Progress" badge: amber instead of the green "watched" colour */
+.status-badge.badge-progress {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+/* --- How it works ------------------------------------------------------ */
+
+.learn-flow-card {
+    margin-top: 28px;
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+/* The badge is dark-hero styled by default; give it a light-card look here */
+.learn-flow-heading {
+    max-width: 650px;
+}
+
+.learn-flow-heading h2 {
+    margin: 12px 0 6px;
+    font-size: 20px;
+}
+
+.learn-flow-heading p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.learn-flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.learn-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.learn-flow-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.learn-flow-step strong,
+.learn-flow-step span {
+    display: block;
+}
+
+.learn-flow-step strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+}
+
+.learn-flow-step span {
+    margin-top: 2px;
+    color: var(--color-text-muted);
+    font-size: 11px;
+}
+
+.learn-flow-arrow {
+    color: var(--color-border-strong);
+    font-size: 18px;
+}
+
+/* --- Chapter Exam call-to-action -------------------------------------- */
+
+.learn-exam-callout {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    margin-top: 28px;
+    padding: 36px 40px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    box-shadow: var(--shadow-lg);
+}
+
+.learn-exam-callout::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    bottom: -90px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    pointer-events: none;
+}
+
+.learn-exam-callout > * {
+    position: relative;
+    z-index: 1;
+}
+
+.learn-exam-content {
+    max-width: 640px;
+}
+
+/* .badge-amber had no rule anywhere; a light amber pill pops on the indigo */
+.learn-exam-callout .chapter-badge {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.learn-exam-callout h2 {
+    margin: 12px 0 8px;
+    font-size: 26px;
+    color: var(--color-text-on-primary);
+}
+
+.learn-exam-callout p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.learn-exam-callout .btn-primary {
+    flex-shrink: 0;
+    background-color: var(--color-surface);
+    border-color: var(--color-surface);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.learn-exam-callout .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+
+/* --- Sub-topic page: lecture path (learn_subtopic.html) --------------- */
+
+.learn-path-section {
+    margin-top: 30px;
+}
+
+.learn-path-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.learn-path-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    transition:
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+/* Connector drawn in the 12px gap below each card, centred on the circles
+   (1px border + 20px padding + half of the 50px circle = 46px). */
+.learn-path-card:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 45px;
+    width: 2px;
+    height: 12px;
+    background: var(--color-border-strong);
+}
+
+.learn-path-card:hover {
+    transform: translateX(3px);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+}
+
+.learn-path-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.learn-path-card.is-completed .learn-path-number {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.learn-path-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.learn-path-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 5px;
+}
+
+.learn-path-type {
+    color: var(--color-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.learn-completed-label,
+.learn-practice-ready {
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.learn-path-card-content h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: 16px;
+}
+
+.learn-path-card-content p {
+    margin: 7px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.learn-path-action {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--color-primary);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.learn-practice-card {
+    border-color: var(--color-accent-purple);
+    background: var(--color-accent-purple-bg);
+}
+
+.learn-practice-card .learn-path-number {
+    background: var(--color-surface);
+    color: var(--color-accent-purple);
+}
+
+.learn-practice-card .learn-path-type,
+.learn-practice-card .learn-path-action {
+    color: var(--color-accent-purple);
+}
+
+.learn-practice-card.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.learn-practice-card.is-disabled:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.learn-empty-card {
+    text-align: center;
+}
+
+.learn-empty-card .module-icon {
+    margin: 0 auto var(--space-md);
+}
+
+.learn-empty-card h3 {
+    margin-bottom: var(--space-sm);
+    font-size: var(--fs-lg);
+}
+
+/* --- Practice page (learn_subtopic_practice.html) --------------------- */
+
+.learn-practice-intro {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    margin: 30px 0 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.learn-practice-intro h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.learn-practice-intro p {
+    max-width: 520px;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.learn-practice-question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.learn-practice-question {
+    transition: box-shadow var(--transition-fast);
+}
+
+.learn-practice-question:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* Option cards.
+   These are real <label><input type="radio"> elements, so the global
+   `label { display:block }` and `input { width:100%; padding; border }`
+   rules would otherwise stretch the radio across the card. Scoped here:
+   the native radio is visually hidden (still keyboard-focusable and
+   arrow-key navigable) and the lettered badge acts as the indicator. */
+.learn-practice-question .p-option {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    margin: 0;
+    padding: var(--space-md);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: var(--fs-base);
+    font-weight: var(--fw-regular);
+    line-height: var(--line-height-base);
+    cursor: pointer;
+    transition:
+        border-color var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.learn-practice-question .p-option:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.learn-practice-question .p-option input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.p-option-letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.p-option-text {
+    flex: 1;
+    min-width: 0;
+    padding-top: 3px;
+    color: var(--color-text-primary);
+}
+
+.learn-practice-question .p-option:has(input:checked) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.learn-practice-question .p-option:has(input:checked) .p-option-letter {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+}
+
+.learn-practice-question .p-option:has(input:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.learn-practice-submit {
+    position: sticky;
+    bottom: 18px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 28px;
+    padding: 16px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(8px);
+}
+
+.learn-submit-note strong,
+.learn-submit-note span {
+    display: block;
+}
+
+.learn-submit-note strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+}
+
+.learn-submit-note span {
+    margin-top: 3px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.learn-submit-note b {
+    color: var(--color-primary);
+    font-weight: 800;
+}
+
+.learn-practice-error {
+    margin-top: 30px;
+}
+
+.learn-practice-error h3 {
+    margin-bottom: var(--space-sm);
+}
+
+.learn-practice-error p {
+    margin-bottom: var(--space-lg);
+}
+
+/* --- Responsive -------------------------------------------------------- */
+
+@media (max-width: 800px) {
+
+    .learn-subtopic-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .learn-hero,
+    .learn-subtopic-hero,
+    .learn-practice-hero {
+        align-items: flex-start;
+    }
+
+    .learn-flow-steps {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .learn-flow-arrow {
+        display: none;
+    }
+
+    .learn-exam-callout {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 28px 24px;
+    }
+
+    .learn-practice-intro {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .learn-hero-icon,
+    .learn-subtopic-hero-icon {
+        display: none;
+    }
+
+    .learn-practice-hero-count {
+        min-width: 85px;
+    }
+
+    .learn-path-card {
+        padding: 15px;
+        gap: 13px;
+    }
+
+    .learn-path-card:not(:last-child)::after {
+        left: 36px;
+    }
+
+    .learn-path-number {
+        width: 42px;
+        height: 42px;
+    }
+
+    .learn-path-card-content h3 {
+        font-size: 14px;
+    }
+
+    .learn-section-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .learn-submit-note strong {
+        display: none;
+    }
+
+    .learn-practice-submit {
+        gap: 16px;
+    }
+
 }

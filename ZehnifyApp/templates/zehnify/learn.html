@@ -1,0 +1,193 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Learn {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+
+<div class="page-container learn-page-container">
+
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">
+        &larr; Back to {{ chapter.name }}
+    </a>
+
+    <section class="hero-banner learn-hero">
+
+        <div class="learn-hero-content">
+            <span class="chapter-badge badge-blue">Learning Path</span>
+            <h1>{{ chapter.name }}</h1>
+            <p>
+                Diagnose what you know, strengthen each concept, and build
+                your mastery one sub-topic at a time.
+            </p>
+        </div>
+
+        <div class="learn-hero-icon">
+            &#9654;
+        </div>
+
+    </section>
+
+    <section class="learn-subtopics-section">
+
+        <div class="section-header learn-section-header">
+            <div>
+                <span class="learn-section-kicker">STEP 1</span>
+                <h2 class="subjects-title">Choose a Sub-topic</h2>
+            </div>
+            <span class="learn-section-hint">
+                Learn &rarr; Practice &rarr; Improve
+            </span>
+        </div>
+
+        <div class="learn-subtopic-grid">
+
+            {% for item in subtopic_data %}
+
+                <a
+                    href="{% url 'learn_subtopic' chapter_id=chapter.id subtopic=item.name %}"
+                    class="learn-subtopic-card {% if item.mastery is None %}is-new{% elif item.mastery >= 85 %}is-strong{% elif item.mastery >= 60 %}is-mid{% else %}is-weak{% endif %}"
+                >
+
+                    <div class="learn-card-top">
+
+                        <span class="learn-subtopic-number">
+                            {{ forloop.counter|stringformat:"02d" }}
+                        </span>
+
+                        {% if item.mastery is None %}
+                            <span class="status-badge badge-unwatched">Not Started</span>
+                        {% elif item.mastery >= 85 %}
+                            <span class="status-badge correct-badge">Strong</span>
+                        {% elif item.mastery >= 60 %}
+                            <span class="status-badge badge-progress">In Progress</span>
+                        {% else %}
+                            <span class="status-badge incorrect-badge">Needs Practice</span>
+                        {% endif %}
+
+                    </div>
+
+                    <div class="learn-subtopic-main">
+
+                        <h3>{{ item.name }}</h3>
+
+                        {% if item.mastery is not None %}
+
+                            <div class="learn-mastery-display">
+                                <strong>{{ item.mastery|floatformat:0 }}%</strong>
+                                <span>
+                                    {% if item.source == 'practice' %}practice accuracy{% else %}exam diagnostic{% endif %}
+                                </span>
+                            </div>
+
+                            <div class="learn-progress-track">
+                                <div class="learn-progress-fill" style="--mastery-width: {{ item.mastery|floatformat:0 }};"></div>
+                            </div>
+
+                        {% else %}
+
+                            <div class="learn-mastery-display is-empty">
+                                <strong>&mdash;</strong>
+                                <span>No practice yet</span>
+                            </div>
+
+                            <div class="learn-progress-track">
+                                <div class="learn-progress-fill" style="--mastery-width: 0;"></div>
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <div class="learn-subtopic-footer">
+
+                        <span class="learn-card-meta">
+                            {% if item.video_count > 0 %}
+                                <span class="learn-meta-icon">&#9654;</span>
+                                {{ item.video_count }} lecture{{ item.video_count|pluralize }}
+                            {% else %}
+                                No lectures yet
+                            {% endif %}
+                        </span>
+
+                        <span class="learn-card-arrow">&rarr;</span>
+
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <div class="no-data-card">
+                    <p class="no-data">No sub-topics have been added to this chapter yet.</p>
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+    <section class="learn-flow-card">
+
+        <div class="learn-flow-heading">
+            <span class="chapter-badge badge-blue">How it works</span>
+            <h2>Build mastery, not just a score.</h2>
+            <p>
+                Your chapter exam helps identify gaps. Focused practice then
+                gives you a chance to close them.
+            </p>
+        </div>
+
+        <div class="learn-flow-steps">
+
+            <div class="learn-flow-step">
+                <span class="learn-flow-number">1</span>
+                <div><strong>Diagnose</strong><span>Find your gaps</span></div>
+            </div>
+
+            <span class="learn-flow-arrow">&rarr;</span>
+
+            <div class="learn-flow-step">
+                <span class="learn-flow-number">2</span>
+                <div><strong>Learn</strong><span>Strengthen concepts</span></div>
+            </div>
+
+            <span class="learn-flow-arrow">&rarr;</span>
+
+            <div class="learn-flow-step">
+                <span class="learn-flow-number">3</span>
+                <div><strong>Practice</strong><span>Test yourself</span></div>
+            </div>
+
+            <span class="learn-flow-arrow">&rarr;</span>
+
+            <div class="learn-flow-step">
+                <span class="learn-flow-number">4</span>
+                <div><strong>Improve</strong><span>Build mastery</span></div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="learn-exam-callout">
+
+        <div class="learn-exam-content">
+            <span class="chapter-badge badge-amber">Ready to Test?</span>
+            <h2>Take the Chapter Exam</h2>
+            <p>
+                Test your understanding across the entire chapter under
+                exam conditions and use the results to identify where
+                you should focus next.
+            </p>
+        </div>
+
+        <a href="{% url 'exam_page' chapter.id %}" class="btn btn-primary btn-lg">
+            Take Chapter Exam &rarr;
+        </a>
+
+    </section>
+
+</div>
+
+{% endblock %}

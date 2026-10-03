@@ -5,6 +5,8 @@ from datetime import timedelta
 from zoneinfo import ZoneInfo
 import re
 import random
+from collections import defaultdict
+
 
 class UserProfile(models.Model):
     STREAM_CHOICES = [
@@ -17,10 +19,16 @@ class UserProfile(models.Model):
 
 class Subject(models.Model):
     name = models.CharField(max_length=20)
-    stream = models.CharField(max_length=10, choices=[
-        ('PRE_ENG', 'Pre-Engineering'),
-        ('PRE_MED', 'Pre-Medical'),
-        ('BOTH', 'both')], default='BOTH')
+    stream = models.CharField(
+        max_length=10,
+        choices=[
+            ('PRE_ENG', 'Pre-Engineering'),
+            ('PRE_MED', 'Pre-Medical'),
+            ('BOTH', 'both')
+        ],
+        default='BOTH'
+    )
+
     def __str__(self):
         return self.name
 
@@ -36,10 +44,11 @@ class Chapter(models.Model):
     grade = models.IntegerField(choices=GRADE_CHOICES, default=11)
     subject = models.ForeignKey(Subject, related_name='chapters', on_delete=models.CASCADE)
     key_formulas = models.TextField(
-        blank=True, 
-        null=True, 
+        blank=True,
+        null=True,
         help_text=r"Enter LaTeX formulas, one per line (e.g., \sqrt{4} or \frac{a}{b})"
     )
+
     def __str__(self):
         return f"{self.name} ({self.grade}th)"
 
@@ -49,13 +58,14 @@ class ChapterVideo(models.Model):
     title = models.CharField(max_length=200, default='Untitled Lecture')
     url_path = models.CharField(max_length=200, help_text="Paste YouTube Video ID or full link")
     order = models.PositiveIntegerField(default=1)
+    subtopic = models.CharField(max_length=100, blank=True, default='')
 
     class Meta:
         ordering = ['order']
 
     def save(self, *args, **kwargs):
         if self.url_path:
-            pattern = r'(?:v=|\/embed\/|youtu\.be\/|\/watch\?v=|^|\/)([a-zA-Z0-9_-]{11})'
+            pattern = r'(?:v=|\/embed\/|youtu\.be\/|\/watch\?v=|^|\/)([a-zA-Z0-9\_-]{11})'
             match = re.search(pattern, self.url_path)
             if match:
                 self.url_path = match.group(1)
@@ -67,10 +77,10 @@ class ChapterVideo(models.Model):
 
 class MCQ(models.Model):
     class Meta:
-        verbose_name_plural = "MCQs"     
-        
+        verbose_name_plural = "MCQs"
+
     chapter = models.ForeignKey(Chapter, related_name='mcqs', on_delete=models.CASCADE)
-    question_text = models.TextField()    
+    question_text = models.TextField()
     A = models.TextField()
     B = models.TextField()
     C = models.TextField()
@@ -105,12 +115,12 @@ class UserAnswer(models.Model):
     is_correct = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.exam_attempt.user.username} - Q{self.mcq.id}: {self.selected_option}"    
+        return f"{self.exam_attempt.user.username} - Q{self.mcq.id}: {self.selected_option}"
 
 
 class Userchaptermastery(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)    
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
     score = models.IntegerField(default=0)
     percentage = models.IntegerField(default=0)
     date_taken = models.DateTimeField(default=timezone.now)
@@ -159,9 +169,7 @@ class ChapterNote(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# MIXED PRACTICE — kept deliberately separate from ExamAttempt/UserAnswer so
-# a mixed/entry-test-style session never writes into chapter mastery, which
-# reflects curriculum understanding, not timed cross-subtopic performance.
+# MIXED PRACTICE
 # ---------------------------------------------------------------------------
 
 class MixedPracticeAttempt(models.Model):
@@ -190,14 +198,23 @@ class MixedPracticeAnswer(models.Model):
         return f"{self.attempt.user.username} - Q{self.mcq.id}: {self.selected_option}"
 
 
+class SubtopicPracticeAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subtopic_practice_attempts')
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='subtopic_practice_attempts')
+    subtopic = models.CharField(max_length=100)
+    score = models.IntegerField(default=0)
+    total_questions = models.IntegerField(default=0)
+    percentage = models.IntegerField(default=0)
+    date_taken = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.chapter.name} - {self.subtopic} ({self.percentage}%)"
+
+
 PKT = ZoneInfo("Asia/Karachi")
 
+
 def get_user_streak(user):
-    """
-    Returns the user's current consecutive-day activity streak.
-    A day counts if the user watched a lecture, attempted a practice
-    question, or took an exam on that day (Pakistan local date).
-    """
     mcq_dates = MCQAttempt.objects.filter(user=user).values_list('last_attempted', flat=True)
     exam_dates = ExamAttempt.objects.filter(user=user).values_list('date_taken', flat=True)
     video_dates = VideoProgress.objects.filter(user=user).values_list('watched_at', flat=True)
@@ -229,18 +246,7 @@ def get_user_streak(user):
     return streak
 
 
-# ---------------------------------------------------------------------------
-# SUBTOPIC POOL — shared functions used by Mixed Practice and the Learn
-# merge, so both features query subtopic data the same consistent way
-# instead of duplicating logic.
-# ---------------------------------------------------------------------------
-
 def get_chapter_subtopics(chapter):
-    """
-    Returns the distinct, real subtopic labels for a chapter's practice
-    questions (is_exam_question=False), in alphabetical order. Only
-    subtopics that actually exist on real questions — nothing invented.
-    """
     return list(
         MCQ.objects.filter(chapter=chapter, is_exam_question=False)
         .exclude(subtopic='')
@@ -251,46 +257,99 @@ def get_chapter_subtopics(chapter):
 
 
 def get_subtopic_sample(chapter, subtopic, count):
-    """
-    Returns up to `count` random practice questions from one subtopic.
-    If fewer than `count` exist, returns whatever's available —
-    the caller (view) is expected to compare len(result) to the
-    requested count and nudge the user if they don't match.
-    """
-    pool = list(
-        MCQ.objects.filter(chapter=chapter, subtopic=subtopic, is_exam_question=False)
-    )
+    pool = list(MCQ.objects.filter(chapter=chapter, subtopic=subtopic, is_exam_question=False))
     if len(pool) <= count:
         return pool
     return random.sample(pool, count)
 
 
-def get_user_subtopic_performance(user, chapter):
+def get_user_subtopic_mastery(user, chapter):
     """
-    Returns a dict of {subtopic: {'correct': int, 'attempted': int, 'accuracy': int}}
-    for every subtopic in the chapter, based on this user's MCQAttempt history.
-    A subtopic with zero attempts still appears, with accuracy=None, so the
-    Learn page can distinguish "weak" from "not started yet".
+    Recency-based mastery: whichever is more recent — the latest completed
+    SubtopicPracticeAttempt for a subtopic, or that subtopic's slice of the
+    user's latest ExamAttempt — determines current mastery. Mixed Practice
+    never contributes here; it's a separate, intentionally unscored signal.
     """
     subtopics = get_chapter_subtopics(chapter)
-    performance = {s: {'correct': 0, 'attempted': 0, 'accuracy': None} for s in subtopics}
 
-    attempts = MCQAttempt.objects.filter(
-        user=user,
-        mcq__chapter=chapter,
-        mcq__is_exam_question=False,
-    ).exclude(mcq__subtopic='').select_related('mcq')
+    mastery = {
+        subtopic: {
+            'mastery': None,
+            'source': None,
+            'practice_percentage': None,
+            'practice_score': 0,
+            'practice_total': 0,
+            'exam_percentage': None,
+            'exam_score': 0,
+            'exam_total': 0,
+        }
+        for subtopic in subtopics
+    }
 
-    for attempt in attempts:
-        s = attempt.mcq.subtopic
-        if s not in performance:
-            continue
-        performance[s]['attempted'] += 1
-        if attempt.is_correct:
-            performance[s]['correct'] += 1
+    latest_exam = (
+        ExamAttempt.objects.filter(user=user, chapter=chapter).order_by('-date_taken').first()
+    )
 
-    for s, data in performance.items():
-        if data['attempted'] > 0:
-            data['accuracy'] = round((data['correct'] / data['attempted']) * 100)
+    exam_percentages = {}
+    exam_date = None
 
-    return performance
+    if latest_exam:
+        exam_date = latest_exam.date_taken
+        exam_stats = defaultdict(lambda: {'correct': 0, 'total': 0})
+        answers = latest_exam.user_answers.select_related('mcq').all()
+
+        for answer in answers:
+            subtopic = answer.mcq.subtopic
+            if subtopic not in mastery:
+                continue
+            exam_stats[subtopic]['total'] += 1
+            if answer.is_correct:
+                exam_stats[subtopic]['correct'] += 1
+
+        for subtopic, stats in exam_stats.items():
+            total = stats['total']
+            correct = stats['correct']
+            if total > 0:
+                percentage = round((correct / total) * 100)
+                mastery[subtopic]['exam_score'] = correct
+                mastery[subtopic]['exam_total'] = total
+                mastery[subtopic]['exam_percentage'] = percentage
+                exam_percentages[subtopic] = percentage
+
+    practice_attempts = (
+        SubtopicPracticeAttempt.objects.filter(user=user, chapter=chapter, subtopic__in=subtopics)
+        .order_by('subtopic', '-date_taken')
+    )
+
+    latest_practice = {}
+    for attempt in practice_attempts:
+        if attempt.subtopic not in latest_practice:
+            latest_practice[attempt.subtopic] = attempt
+
+    for subtopic in subtopics:
+        practice = latest_practice.get(subtopic)
+
+        if practice:
+            mastery[subtopic]['practice_percentage'] = practice.percentage
+            mastery[subtopic]['practice_score'] = practice.score
+            mastery[subtopic]['practice_total'] = practice.total_questions
+
+        has_exam = subtopic in exam_percentages
+        has_practice = practice is not None
+
+        if has_exam and has_practice:
+            # Whichever happened more recently wins.
+            if exam_date >= practice.date_taken:
+                mastery[subtopic]['mastery'] = exam_percentages[subtopic]
+                mastery[subtopic]['source'] = 'exam'
+            else:
+                mastery[subtopic]['mastery'] = practice.percentage
+                mastery[subtopic]['source'] = 'practice'
+        elif has_practice:
+            mastery[subtopic]['mastery'] = practice.percentage
+            mastery[subtopic]['source'] = 'practice'
+        elif has_exam:
+            mastery[subtopic]['mastery'] = exam_percentages[subtopic]
+            mastery[subtopic]['source'] = 'exam'
+
+    return mastery

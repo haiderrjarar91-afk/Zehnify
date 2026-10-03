@@ -1,0 +1,192 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}{{ subtopic }} | {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+
+<div class="page-container learn-subtopic-page">
+
+    <!-- Back Navigation -->
+    <a href="{% url 'learn_page' chapter.id %}" class="back-link">
+        &larr; Back to {{ chapter.name }} Learning
+    </a>
+
+    <!-- Header -->
+    <section class="hero-banner learn-subtopic-hero">
+
+        <div>
+            <span class="chapter-badge badge-blue">
+                Learning Path
+            </span>
+
+            <h1>{{ subtopic }}</h1>
+
+            <p>
+                Work through the lectures, then complete the practice
+                checkpoint to strengthen this sub-topic.
+            </p>
+        </div>
+
+        <div class="learn-subtopic-hero-icon">
+            &#9654;
+        </div>
+
+    </section>
+
+    <!-- Learning Path -->
+    <section class="learn-path-section">
+
+        <div class="section-header learn-section-header">
+
+            <div>
+                <span class="learn-section-kicker">YOUR PATH</span>
+                <h2 class="subjects-title">Learn &amp; Practice</h2>
+            </div>
+
+            <span class="learn-section-hint">
+                {{ lectures|length }} lecture{{ lectures|length|pluralize }}
+                &rarr; 20-question checkpoint
+            </span>
+
+        </div>
+
+        <div class="learn-path-list">
+
+            {% for lecture in lectures %}
+
+                <a
+                    href="{% url 'watch_lecture' lecture.id %}"
+                    class="learn-path-card {% if lecture.id in watched_ids %}is-completed{% endif %}"
+                >
+
+                    <div class="learn-path-number">
+                        {% if lecture.id in watched_ids %}
+                            &#10003;
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+
+                    <div class="learn-path-card-content">
+
+                        <div class="learn-path-card-meta">
+
+                            <span class="learn-path-type">
+                                Lecture {{ forloop.counter }}
+                            </span>
+
+                            {% if lecture.id in watched_ids %}
+                                <span class="learn-completed-label">
+                                    Completed
+                                </span>
+                            {% endif %}
+
+                        </div>
+
+                        <h3>{{ lecture.title }}</h3>
+
+                        <span class="learn-path-action">
+                            {% if lecture.id in watched_ids %}
+                                Watch again &rarr;
+                            {% else %}
+                                Watch Lecture &rarr;
+                            {% endif %}
+                        </span>
+
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <div class="no-data-card learn-empty-card">
+
+                    <div class="module-icon icon-blue">
+                        &#9654;
+                    </div>
+
+                    <h3>No videos for this sub-topic yet</h3>
+
+                    <p>
+                        Lectures for this sub-topic haven't been added yet.
+                        You can still continue to the practice checkpoint.
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+            <!-- Practice Checkpoint -->
+            {% if practice_count >= 20 %}
+            <a
+                href="{% url 'learn_subtopic_practice' chapter_id=chapter.id subtopic=subtopic %}"
+                class="learn-path-card learn-practice-card"
+            >
+            {% else %}
+            <div
+                class="learn-path-card learn-practice-card is-disabled"
+                aria-disabled="true"
+            >
+            {% endif %}
+
+                <div class="learn-path-number practice-path-icon">
+                    &#9999;
+                </div>
+
+                <div class="learn-path-card-content">
+
+                    <div class="learn-path-card-meta">
+
+                        <span class="learn-path-type">
+                            Practice
+                        </span>
+
+                        {% if practice_count >= 20 %}
+                            <span class="learn-practice-ready">
+                                Checkpoint
+                            </span>
+                        {% endif %}
+
+                    </div>
+
+                    <h3>20-Question Practice</h3>
+
+                    {% if practice_count >= 20 %}
+
+                        <p>
+                            Put what you've learned into practice with a
+                            focused 20-question set on {{ subtopic }}.
+                        </p>
+
+                        <span class="learn-path-action">
+                            Start Practice &rarr;
+                        </span>
+
+                    {% else %}
+
+                        <p>
+                            This sub-topic currently doesn't have enough
+                            questions for the required 20-question practice set.
+                        </p>
+
+                        <span class="learn-path-action">
+                            Practice unavailable
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            {% if practice_count >= 20 %}
+            </a>
+            {% else %}
+            </div>
+            {% endif %}
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}
