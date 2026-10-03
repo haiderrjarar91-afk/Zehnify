@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 import re
+import random
 
 class UserProfile(models.Model):
     STREAM_CHOICES = [
@@ -157,8 +158,6 @@ class ChapterNote(models.Model):
     def __str__(self):
         return f"{self.user.username} - Notes for {self.chapter.name}"
 
-    from datetime import timedelta
-from zoneinfo import ZoneInfo
 
 PKT = ZoneInfo("Asia/Karachi")
 
@@ -199,3 +198,70 @@ def get_user_streak(user):
             break
 
     return streak
+
+
+# ---------------------------------------------------------------------------
+# SUBTOPIC POOL — shared functions used by Mixed Practice and the Learn
+# merge, so both features query subtopic data the same consistent way
+# instead of duplicating logic.
+# ---------------------------------------------------------------------------
+
+def get_chapter_subtopics(chapter):
+    """
+    Returns the distinct, real subtopic labels for a chapter's practice
+    questions (is_exam_question=False), in alphabetical order. Only
+    subtopics that actually exist on real questions — nothing invented.
+    """
+    return list(
+        MCQ.objects.filter(chapter=chapter, is_exam_question=False)
+        .exclude(subtopic='')
+        .values_list('subtopic', flat=True)
+        .distinct()
+        .order_by('subtopic')
+    )
+
+
+def get_subtopic_sample(chapter, subtopic, count):
+    """
+    Returns up to `count` random practice questions from one subtopic.
+    If fewer than `count` exist, returns whatever's available —
+    the caller (view) is expected to compare len(result) to the
+    requested count and nudge the user if they don't match.
+    """
+    pool = list(
+        MCQ.objects.filter(chapter=chapter, subtopic=subtopic, is_exam_question=False)
+    )
+    if len(pool) <= count:
+        return pool
+    return random.sample(pool, count)
+
+
+def get_user_subtopic_performance(user, chapter):
+    """
+    Returns a dict of {subtopic: {'correct': int, 'attempted': int, 'accuracy': int}}
+    for every subtopic in the chapter, based on this user's MCQAttempt history.
+    A subtopic with zero attempts still appears, with accuracy=None, so the
+    Learn page can distinguish "weak" from "not started yet".
+    """
+    subtopics = get_chapter_subtopics(chapter)
+    performance = {s: {'correct': 0, 'attempted': 0, 'accuracy': None} for s in subtopics}
+
+    attempts = MCQAttempt.objects.filter(
+        user=user,
+        mcq__chapter=chapter,
+        mcq__is_exam_question=False,
+    ).exclude(mcq__subtopic='').select_related('mcq')
+
+    for attempt in attempts:
+        s = attempt.mcq.subtopic
+        if s not in performance:
+            continue  # safety: subtopic not in the current list, skip
+        performance[s]['attempted'] += 1
+        if attempt.is_correct:
+            performance[s]['correct'] += 1
+
+    for s, data in performance.items():
+        if data['attempted'] > 0:
+            data['accuracy'] = round((data['correct'] / data['attempted']) * 100)
+
+    return performance
