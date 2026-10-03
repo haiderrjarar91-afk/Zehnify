@@ -3291,6 +3291,332 @@ label {
 
     .learn-practice-submit {
         gap: 16px;
-    }
+    }}
 
+/* ==========================================================================
+   MY MISTAKES
+   Page: my_mistakes.html  (+ the "My Mistakes" card on chapter_detail.html)
+   All var(--...) tokens below exist in :root.
+   ========================================================================== */
+
+/* Red icon for the chapter-detail module card */
+.icon-red {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
 }
+
+/* --- Hero --- */
+.mistakes-hero {
+  padding: var(--space-xl);
+}
+
+.mistakes-hero h1 {
+  font-size: var(--fs-2xl);
+  margin-top: var(--space-sm);
+}
+
+.mistakes-hero p {
+  font-size: var(--fs-base);
+  margin-top: var(--space-xs);
+  max-width: 700px;
+}
+
+/* --- Toolbar --- */
+.mistakes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin: var(--space-lg) 0 var(--space-sm);
+}
+
+.mistakes-filter-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* global label{display:block; margin-bottom} would misalign this row */
+.mistakes-filter-form label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+/* global select{width:100%} would stretch it */
+.mistakes-filter-form select {
+  width: auto;
+  max-width: 280px;
+  padding: 0.5rem 0.85rem;
+  font-size: var(--fs-sm);
+}
+
+.mistakes-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.mistakes-count {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+}
+
+.mistakes-tip {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.mistakes-empty {
+  margin-top: var(--space-lg);
+  text-align: center;
+}
+
+.mistakes-empty-action {
+  margin-top: var(--space-md);
+}
+
+/* --- Card list --- */
+.mistakes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.mistake-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg);
+  scroll-margin-top: 90px; /* keeps the card clear of the sticky header after Save */
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.mistake-card.try-correct {
+  border-left-color: var(--color-success);
+}
+
+.mistake-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.mistake-card .q-text {
+  margin-bottom: var(--space-md);
+}
+
+/* --- Reveal / try-mode switching --- */
+.mistake-card.is-hidden .reveal-only {
+  display: none;
+}
+
+.mistake-card:not(.is-hidden) .try-only {
+  display: none;
+}
+
+/* --- Options (real radios, visually hidden; same pattern as practice) --- */
+.mistake-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.mistake-option {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin: 0;
+  padding: var(--space-md);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-regular);
+  line-height: var(--line-height-base);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.mistake-option input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Review mode: options are display-only and show the markers */
+.mistake-card:not(.is-hidden) .mistake-option {
+  cursor: default;
+}
+
+.mistake-card:not(.is-hidden) .mistake-option.is-correct {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.mistake-card:not(.is-hidden) .mistake-option.is-correct .p-option-letter {
+  background: var(--color-success);
+  color: var(--color-text-on-primary);
+}
+
+.mistake-card:not(.is-hidden) .mistake-option.is-selected-wrong {
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.mistake-card:not(.is-hidden) .mistake-option.is-selected-wrong .p-option-letter {
+  background: var(--color-danger);
+  color: var(--color-text-on-primary);
+}
+
+/* Try mode: no markers, options are selectable */
+.mistake-card.is-hidden .mistake-option {
+  cursor: pointer;
+}
+
+.mistake-card.is-hidden .mistake-option:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.mistake-card.is-hidden .mistake-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.mistake-card.is-hidden .mistake-option:has(input:checked) .p-option-letter {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.mistake-card.is-hidden .mistake-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.mistake-option-tag {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.mistake-option-tag.tag-correct {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.mistake-option-tag.tag-wrong {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* --- Try row --- */
+.mistake-try-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.mistake-try-result {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.mistake-try-result.is-correct { color: var(--color-success); }
+.mistake-try-result.is-wrong   { color: var(--color-danger); }
+.mistake-try-result.is-neutral { color: var(--color-text-muted); }
+
+.mistake-note {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  margin-bottom: var(--space-md);
+}
+
+.mistake-card .explanation-box {
+  margin-bottom: var(--space-md);
+}
+
+/* --- Optional type + reflection form --- */
+.mistake-save-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.mistake-save-form .btn {
+  align-self: flex-start;
+}
+
+.mistake-field label {
+  margin-bottom: var(--space-xs);
+}
+
+.mistake-optional {
+  font-weight: var(--fw-regular);
+  color: var(--color-text-muted);
+}
+
+.mistake-field select {
+  max-width: 320px;
+}
+
+.mistake-field textarea {
+  resize: vertical;
+  line-height: var(--line-height-base);
+}
+
+.mistake-word-count {
+  display: block;
+  margin-top: var(--space-xs);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+}
+
+.mistake-word-count.is-over {
+  color: var(--color-danger);
+}
+
+/* --- Discard --- */
+.mistake-discard-form {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+
+.mistake-card.try-correct .js-discard-btn {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-text-on-primary);
+}
+
+@media (max-width: 640px) {
+  .mistakes-toolbar,
+  .mistakes-toolbar-right {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mistake-option {
+    flex-wrap: wrap;
+  }
+}    

@@ -62,7 +62,21 @@
             <span class="chapter-arrow">&rarr;</span>
         </a>
 
-        <!-- 4. Exam Review Module (Shows if an attempt exists) -->
+        <!-- 4. My Mistakes Module -->
+        <a href="{% url 'my_mistakes_page' chapter.id %}" class="module-card">
+            <div class="module-icon icon-red">&#9998;</div>
+            <div class="module-info">
+                <h3>My Mistakes</h3>
+                {% if mistake_count %}
+                <p>{{ mistake_count }} question{{ mistake_count|pluralize }} to revisit from your practice sets.</p>
+                {% else %}
+                <p>Questions you get wrong in practice collect here for review.</p>
+                {% endif %}
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+
+        <!-- 5. Exam Review Module (Shows if an attempt exists) -->
         {% if latest_attempt %}
         <a href="{% url 'exam_review' chapter.id latest_attempt.id %}" class="module-card">
             <div class="module-icon icon-amber">&#128269;</div>
@@ -73,7 +87,7 @@
             <span class="chapter-arrow">&rarr;</span>
         </a>
 
-        <!-- 5. Retake Final Test Module -->
+        <!-- 6. Retake Final Test Module -->
         <a href="{% url 'exam_page' chapter.id %}" class="module-card module-exam">
             <div class="module-icon icon-amber">&#127942;</div>
             <div class="module-info">

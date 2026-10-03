@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from collections import defaultdict
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 import random
 
 from .models import (
@@ -27,6 +29,27 @@ from .models import (
     get_user_subtopic_mastery,
 )
 from .forms import StudentRegisterationForm
+
+
+# ---------------------------------------------------------------------------
+# MY MISTAKES - settings
+#
+# The mistake-type list is a plain constant (not model field choices), so you
+# can edit it any time without a migration. Already-saved values that are no
+# longer in the list simply show up as "(old type)" in the dropdown.
+# ---------------------------------------------------------------------------
+
+MISTAKE_TYPES = [
+    'Concept gap',
+    'Forgot formula',
+    'Calculation error',
+    'Misread question',
+    'Careless slip',
+    'Guessed',
+]
+
+REFLECTION_MAX_WORDS = 20
+REFLECTION_MAX_CHARS = 300
 
 
 def signup(request):
@@ -187,6 +210,13 @@ def chapterdetail(request, chapter_id):
         '-date_taken'
     ).first()
 
+    mistake_count = MCQAttempt.objects.filter(
+        user=request.user,
+        mcq__chapter=chapter,
+        mcq__is_exam_question=False,
+        is_bookmarked=True,
+    ).count()
+
     return render(
         request,
         'zehnify/chapter_detail.html',
@@ -195,6 +225,7 @@ def chapterdetail(request, chapter_id):
             'mastery': mastery,
             'mastery_width': f"{mastery}%",
             'latest_attempt': latest_attempt,
+            'mistake_count': mistake_count,
         }
     )
 
@@ -495,9 +526,9 @@ def learn_subtopic_practice(
             attempt.selected_option = selected_option
             attempt.is_correct = is_correct
 
-            # Lightweight "needs review" signal: a wrong answer
-            # bookmarks the question. A correct answer never clears an
-            # existing bookmark, so earlier misses stay flagged.
+            # A wrong answer puts the question in the My Mistakes log.
+            # A correct answer never removes it - the student discards
+            # questions manually from the My Mistakes page.
             if not is_correct:
                 attempt.is_bookmarked = True
 
@@ -534,6 +565,246 @@ def learn_subtopic_practice(
         'learn_subtopic',
         chapter_id=chapter.id,
         subtopic=subtopic,
+    )
+
+
+# ---------------------------------------------------------------------------
+# MY MISTAKES
+#
+# The log is simply MCQAttempt rows with is_bookmarked=True. Sub-topic
+# practice and Mixed Practice put questions in; Chapter Exam never does.
+# ---------------------------------------------------------------------------
+
+def _option_letter(mcq, value):
+    """
+    Normalise a stored option (a letter like 'B', or the option's text) to
+    'A'/'B'/'C'/'D'. Returns '' if it can't be matched.
+    """
+    value = (value or '').strip()
+
+    if not value:
+        return ''
+
+    if len(value) == 1 and value.upper() in 'ABCD':
+        return value.upper()
+
+    lowered = value.casefold()
+
+    for letter in 'ABCD':
+        if (getattr(mcq, letter) or '').strip().casefold() == lowered:
+            return letter
+
+    return ''
+
+
+def _mistakes_redirect(chapter_id, subtopic='', mcq_id=None):
+    url = reverse(
+        'my_mistakes_page',
+        kwargs={'chapter_id': chapter_id}
+    )
+
+    if subtopic:
+        url += '?' + urlencode({'subtopic': subtopic})
+
+    if mcq_id:
+        url += f'#mcq-{mcq_id}'
+
+    return redirect(url)
+
+
+@login_required
+def my_mistakes(request, chapter_id):
+
+    chapter = get_object_or_404(
+        Chapter,
+        id=chapter_id
+    )
+
+    # Safety net: exam questions can never appear here, even if one were
+    # ever bookmarked by mistake.
+    log_queryset = (
+        MCQAttempt.objects
+        .filter(
+            user=request.user,
+            mcq__chapter=chapter,
+            mcq__is_exam_question=False,
+            is_bookmarked=True,
+        )
+        .select_related('mcq')
+    )
+
+    # -----------------------------------------------------------------------
+    # POST: save type + reflection, or discard from the log
+    # -----------------------------------------------------------------------
+
+    if request.method == 'POST':
+
+        subtopic_filter = request.POST.get('subtopic', '')
+        action = request.POST.get('action', 'save')
+
+        try:
+            mcq_id = int(request.POST.get('mcq_id', ''))
+        except (TypeError, ValueError):
+            messages.error(request, 'That question could not be found.')
+            return _mistakes_redirect(chapter.id, subtopic_filter)
+
+        attempt = log_queryset.filter(mcq_id=mcq_id).first()
+
+        if attempt is None:
+            messages.error(
+                request,
+                'That question is no longer in your mistakes log.'
+            )
+            return _mistakes_redirect(chapter.id, subtopic_filter)
+
+        if action == 'discard':
+
+            # Clear the type and reflection too, so if the student misses
+            # this question again later it comes back as a fresh mistake.
+            attempt.is_bookmarked = False
+            attempt.mistake_type = ''
+            attempt.reflection = ''
+
+            # update_fields keeps last_attempted (and so the streak)
+            # untouched - managing the log is not a practice attempt.
+            attempt.save(
+                update_fields=[
+                    'is_bookmarked',
+                    'mistake_type',
+                    'reflection',
+                ]
+            )
+
+            messages.success(
+                request,
+                'Question removed from your mistakes log.'
+            )
+
+            return _mistakes_redirect(chapter.id, subtopic_filter)
+
+        # action == 'save'
+        mistake_type = request.POST.get('mistake_type', '').strip()
+
+        # Collapse stray whitespace/newlines into single spaces.
+        reflection = ' '.join(
+            request.POST.get('reflection', '').split()
+        )
+
+        if mistake_type and mistake_type not in MISTAKE_TYPES:
+            messages.error(request, 'Please choose a valid mistake type.')
+            return _mistakes_redirect(
+                chapter.id, subtopic_filter, mcq_id
+            )
+
+        if len(reflection.split()) > REFLECTION_MAX_WORDS:
+            messages.error(
+                request,
+                f'Your reflection must be {REFLECTION_MAX_WORDS} '
+                f'words or fewer.'
+            )
+            return _mistakes_redirect(
+                chapter.id, subtopic_filter, mcq_id
+            )
+
+        if len(reflection) > REFLECTION_MAX_CHARS:
+            messages.error(
+                request,
+                'Your reflection is too long. Please shorten it.'
+            )
+            return _mistakes_redirect(
+                chapter.id, subtopic_filter, mcq_id
+            )
+
+        attempt.mistake_type = mistake_type
+        attempt.reflection = reflection
+
+        attempt.save(
+            update_fields=['mistake_type', 'reflection']
+        )
+
+        messages.success(request, 'Saved.')
+
+        return _mistakes_redirect(chapter.id, subtopic_filter, mcq_id)
+
+    # -----------------------------------------------------------------------
+    # GET: list mistakes, optionally filtered by sub-topic
+    # -----------------------------------------------------------------------
+
+    total_count = log_queryset.count()
+
+    subtopics = [
+        s for s in
+        log_queryset
+        .values_list('mcq__subtopic', flat=True)
+        .distinct()
+        .order_by('mcq__subtopic')
+        if s
+    ]
+
+    selected_subtopic = request.GET.get('subtopic', '')
+
+    # Ignore a stale filter (e.g. its last question was just discarded).
+    if selected_subtopic not in subtopics:
+        selected_subtopic = ''
+
+    attempts = log_queryset
+
+    if selected_subtopic:
+        attempts = attempts.filter(mcq__subtopic=selected_subtopic)
+
+    attempts = attempts.order_by('-last_attempted', '-id')
+
+    entries = []
+
+    for attempt in attempts:
+
+        mcq = attempt.mcq
+
+        correct_letter = _option_letter(mcq, mcq.correct_option)
+        selected_letter = _option_letter(mcq, attempt.selected_option)
+
+        options = [
+            {
+                'letter': letter,
+                'text': getattr(mcq, letter),
+                'is_correct': letter == correct_letter,
+                'is_selected': letter == selected_letter,
+            }
+            for letter in 'ABCD'
+        ]
+
+        entries.append({
+            'attempt': attempt,
+            'mcq': mcq,
+            'options': options,
+            'correct_letter': correct_letter,
+            'selected_letter': selected_letter,
+            'answered_correctly_since': (
+                bool(correct_letter)
+                and correct_letter == selected_letter
+            ),
+            'old_mistake_type': (
+                attempt.mistake_type
+                if attempt.mistake_type
+                and attempt.mistake_type not in MISTAKE_TYPES
+                else ''
+            ),
+        })
+
+    return render(
+        request,
+        'zehnify/my_mistakes.html',
+        {
+            'chapter': chapter,
+            'entries': entries,
+            'subtopics': subtopics,
+            'selected_subtopic': selected_subtopic,
+            'mistake_types': MISTAKE_TYPES,
+            'total_count': total_count,
+            'shown_count': len(entries),
+            'reflection_max_words': REFLECTION_MAX_WORDS,
+            'reflection_max_chars': REFLECTION_MAX_CHARS,
+        }
     )
 
 
@@ -1024,10 +1295,8 @@ def mixed_practice_session(
             if is_correct:
                 score += 1
 
-            # Lightweight "needs review" signal: a wrong answer bookmarks
-            # the question. This only touches MCQAttempt.is_bookmarked
-            # (plus the selected option / correctness, so a freshly created
-            # row is never left half-filled). It does NOT write to
+            # A wrong answer puts the question in the My Mistakes log.
+            # This only touches MCQAttempt. It does NOT write to
             # SubtopicPracticeAttempt, get_user_subtopic_mastery or
             # Userchaptermastery - Mixed Practice never counts toward mastery.
             if user_choice and not is_correct:

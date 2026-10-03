@@ -1,0 +1,249 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}My Mistakes | {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container mistakes-page">
+
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">&larr; Back to {{ chapter.name }}</a>
+
+    <section class="hero-banner mistakes-hero">
+        <span class="chapter-badge">{{ chapter.name }}</span>
+        <h1>My Mistakes</h1>
+        <p>Every question you got wrong in sub-topic practice and Mixed Practice. Chapter Exam questions are tracked separately and never appear here.</p>
+    </section>
+
+    {% if total_count == 0 %}
+
+    <div class="no-data-card mistakes-empty">
+        <p class="no-data">
+            Nothing here yet. When you answer a practice question wrongly, it is added to this log automatically.
+        </p>
+        <div class="mistakes-empty-action">
+            <a href="{% url 'learn_page' chapter.id %}" class="btn btn-primary">Go to Learn</a>
+        </div>
+    </div>
+
+    {% else %}
+
+    <div class="mistakes-toolbar">
+        <form method="get" class="mistakes-filter-form">
+            <label for="subtopic-filter">Sub-topic</label>
+            <select id="subtopic-filter" name="subtopic" onchange="this.form.submit()">
+                <option value="">All sub-topics</option>
+                {% for s in subtopics %}
+                <option value="{{ s }}" {% if s == selected_subtopic %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+            <noscript><button type="submit" class="btn btn-secondary btn-sm">Apply</button></noscript>
+        </form>
+
+        <div class="mistakes-toolbar-right">
+            <span class="mistakes-count">Showing {{ shown_count }} of {{ total_count }}</span>
+            <button type="button" id="toggle-all" class="btn btn-secondary btn-sm">Hide all answers</button>
+        </div>
+    </div>
+
+    <p class="mistakes-tip">
+        Tip: hide the answers, pick an option and press <strong>Check answer</strong>. If you get it right, discard it from the log.
+    </p>
+
+    <div class="mistakes-list">
+        {% for entry in entries %}
+        <article class="mistake-card" id="mcq-{{ entry.mcq.id }}" data-correct="{{ entry.correct_letter }}">
+
+            <div class="mistake-card-top">
+                {% if entry.mcq.subtopic %}
+                <span class="q-badge">{{ entry.mcq.subtopic }}</span>
+                {% else %}
+                <span class="q-badge">Uncategorized</span>
+                {% endif %}
+                <button type="button" class="btn btn-secondary btn-sm js-card-toggle">Hide answer</button>
+            </div>
+
+            <p class="q-text">{{ entry.mcq.question_text }}</p>
+
+            {% if entry.mcq.diagram %}
+            <div class="mcq-diagram-wrapper">
+                <img src="{{ entry.mcq.diagram.url }}" alt="Question diagram" class="mcq-diagram-img">
+            </div>
+            {% endif %}
+
+            <div class="mistake-options">
+                {% for opt in entry.options %}
+                <label class="mistake-option{% if opt.is_correct %} is-correct{% endif %}{% if opt.is_selected and not opt.is_correct %} is-selected-wrong{% endif %}">
+                    <input type="radio" name="try_{{ entry.mcq.id }}" value="{{ opt.letter }}">
+                    <span class="p-option-letter">{{ opt.letter }}</span>
+                    <span class="p-option-text">{{ opt.text }}</span>
+                    {% if opt.is_correct %}
+                    <span class="mistake-option-tag tag-correct reveal-only">Correct answer</span>
+                    {% elif opt.is_selected %}
+                    <span class="mistake-option-tag tag-wrong reveal-only">Your answer</span>
+                    {% endif %}
+                </label>
+                {% endfor %}
+            </div>
+
+            <!-- Try mode controls (only visible while answers are hidden) -->
+            <div class="mistake-try-row try-only">
+                <button type="button" class="btn btn-primary btn-sm js-check">Check answer</button>
+                <span class="mistake-try-result js-try-result" aria-live="polite"></span>
+            </div>
+
+            <!-- Review mode content (hidden while trying) -->
+            {% if entry.answered_correctly_since %}
+            <div class="state-correct mistake-note reveal-only">
+                You've since answered this question correctly. You can discard it below.
+            </div>
+            {% endif %}
+
+            {% if entry.mcq.master_explanation %}
+            <div class="explanation-box reveal-only">
+                <strong>Explanation:</strong><br>
+                {{ entry.mcq.master_explanation|linebreaksbr }}
+            </div>
+            {% endif %}
+
+            <form method="post" class="mistake-save-form reveal-only">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save">
+                <input type="hidden" name="mcq_id" value="{{ entry.mcq.id }}">
+                <input type="hidden" name="subtopic" value="{{ selected_subtopic }}">
+
+                <div class="mistake-field">
+                    <label for="type-{{ entry.mcq.id }}">Mistake type <span class="mistake-optional">(optional)</span></label>
+                    <select id="type-{{ entry.mcq.id }}" name="mistake_type">
+                        <option value="">&mdash; Select type &mdash;</option>
+                        {% for t in mistake_types %}
+                        <option value="{{ t }}" {% if t == entry.attempt.mistake_type %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                        {% if entry.old_mistake_type %}
+                        <option value="{{ entry.old_mistake_type }}" selected>{{ entry.old_mistake_type }} (old type)</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="mistake-field">
+                    <label for="refl-{{ entry.mcq.id }}">
+                        Reflection <span class="mistake-optional">(optional, max {{ reflection_max_words }} words)</span>
+                    </label>
+                    <textarea id="refl-{{ entry.mcq.id }}" name="reflection" rows="2"
+                              maxlength="{{ reflection_max_chars }}"
+                              class="js-reflection"
+                              data-max-words="{{ reflection_max_words }}"
+                              placeholder="What went wrong, in your own words?">{{ entry.attempt.reflection }}</textarea>
+                    <span class="mistake-word-count js-word-count">0 / {{ reflection_max_words }} words</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm js-save-btn">Save</button>
+            </form>
+
+            <form method="post" class="mistake-discard-form"
+                  onsubmit="return confirm('Remove this question from your mistakes log? Its mistake type and reflection will be cleared.');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="discard">
+                <input type="hidden" name="mcq_id" value="{{ entry.mcq.id }}">
+                <input type="hidden" name="subtopic" value="{{ selected_subtopic }}">
+                <button type="submit" class="btn btn-danger btn-sm js-discard-btn">Discard from log</button>
+            </form>
+
+        </article>
+        {% endfor %}
+    </div>
+
+    {% endif %}
+</div>
+
+<script>
+(function () {
+    var cards = document.querySelectorAll('.mistake-card');
+    var toggleAll = document.getElementById('toggle-all');
+
+    function resetTry(card) {
+        var radios = card.querySelectorAll('.mistake-option input[type="radio"]');
+        for (var i = 0; i < radios.length; i++) { radios[i].checked = false; }
+        var result = card.querySelector('.js-try-result');
+        if (result) { result.textContent = ''; result.className = 'mistake-try-result js-try-result'; }
+        card.classList.remove('try-correct');
+    }
+
+    function setHidden(card, hidden) {
+        card.classList.toggle('is-hidden', hidden);
+        var btn = card.querySelector('.js-card-toggle');
+        if (btn) { btn.textContent = hidden ? 'Show answer' : 'Hide answer'; }
+        resetTry(card);
+    }
+
+    function syncToggleAll() {
+        if (!toggleAll) { return; }
+        var anyShown = false;
+        for (var i = 0; i < cards.length; i++) {
+            if (!cards[i].classList.contains('is-hidden')) { anyShown = true; break; }
+        }
+        toggleAll.textContent = anyShown ? 'Hide all answers' : 'Show all answers';
+    }
+
+    for (var i = 0; i < cards.length; i++) {
+        (function (card) {
+            var btn = card.querySelector('.js-card-toggle');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    setHidden(card, !card.classList.contains('is-hidden'));
+                    syncToggleAll();
+                });
+            }
+
+            var check = card.querySelector('.js-check');
+            if (check) {
+                check.addEventListener('click', function () {
+                    var result = card.querySelector('.js-try-result');
+                    var picked = card.querySelector('.mistake-option input[type="radio"]:checked');
+                    if (!picked) {
+                        result.textContent = 'Pick an option first.';
+                        result.className = 'mistake-try-result js-try-result is-neutral';
+                        return;
+                    }
+                    if (picked.value === card.getAttribute('data-correct')) {
+                        result.textContent = 'Correct! You can discard it from the log now.';
+                        result.className = 'mistake-try-result js-try-result is-correct';
+                        card.classList.add('try-correct');
+                    } else {
+                        result.textContent = 'Not quite. Try another option.';
+                        result.className = 'mistake-try-result js-try-result is-wrong';
+                        card.classList.remove('try-correct');
+                    }
+                });
+            }
+
+            var area = card.querySelector('.js-reflection');
+            var counter = card.querySelector('.js-word-count');
+            var saveBtn = card.querySelector('.js-save-btn');
+            if (area && counter) {
+                var max = parseInt(area.getAttribute('data-max-words'), 10);
+                var update = function () {
+                    var text = area.value.trim();
+                    var words = text ? text.split(/\s+/).length : 0;
+                    counter.textContent = words + ' / ' + max + ' words';
+                    var over = words > max;
+                    counter.classList.toggle('is-over', over);
+                    if (saveBtn) { saveBtn.disabled = over; }
+                };
+                area.addEventListener('input', update);
+                update();
+            }
+        })(cards[i]);
+    }
+
+    if (toggleAll) {
+        toggleAll.addEventListener('click', function () {
+            var anyShown = false;
+            for (var i = 0; i < cards.length; i++) {
+                if (!cards[i].classList.contains('is-hidden')) { anyShown = true; break; }
+            }
+            for (var j = 0; j < cards.length; j++) { setHidden(cards[j], anyShown); }
+            syncToggleAll();
+        });
+    }
+})();
+</script>
+{% endblock %}

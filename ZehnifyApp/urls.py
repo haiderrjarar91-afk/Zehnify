@@ -14,6 +14,7 @@ urlpatterns = [
     path('chapter/<int:chapter_id>/learn/<str:subtopic>/practice/', views.learn_subtopic_practice, name='learn_subtopic_practice'),
     path('chapter/<int:chapter_id>/exam/', views.Exam, name='exam_page'),
     path('chapter/<int:chapter_id>/exam/review/<int:attempt_id>/', views.exam_review, name='exam_review'),
+    path('chapter/<int:chapter_id>/mistakes/', views.my_mistakes, name='my_mistakes_page'),
     path('video/<int:video_id>/toggle-watched/', views.toggle_video_watched, name='toggle_video_watched'),
     path('lecture/<int:video_id>/', views.watch_lecture, name='watch_lecture'),
     path('notes/<int:chapter_id>/', views.notes, name='notes_page'),

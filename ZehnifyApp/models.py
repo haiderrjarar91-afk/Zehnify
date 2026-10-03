@@ -131,8 +131,17 @@ class MCQAttempt(models.Model):
     mcq = models.ForeignKey(MCQ, on_delete=models.CASCADE, related_name='attempts')
     selected_option = models.CharField(max_length=10, blank=True, null=True)
     is_correct = models.BooleanField(default=False)
-    is_bookmarked = models.BooleanField(default=False, help_text="Mark as an error or for future review")
+    is_bookmarked = models.BooleanField(
+        default=False,
+        help_text="True = this question is in the student's My Mistakes log"
+    )
     last_attempted = models.DateTimeField(auto_now=True)
+
+    # Optional, filled in later by the student on the My Mistakes page.
+    # The allowed mistake types live in views.MISTAKE_TYPES (not as field
+    # choices) so the list can change without a migration.
+    mistake_type = models.CharField(max_length=30, blank=True, default='')
+    reflection = models.CharField(max_length=300, blank=True, default='')
 
     class Meta:
         unique_together = ('user', 'mcq')
