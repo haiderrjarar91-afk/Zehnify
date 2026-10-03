@@ -55,7 +55,6 @@ class ChapterVideo(models.Model):
 
     def save(self, *args, **kwargs):
         if self.url_path:
-            # Extracts 11-char ID cleanly from embed, standard watch, youtu.be, or raw IDs
             pattern = r'(?:v=|\/embed\/|youtu\.be\/|\/watch\?v=|^|\/)([a-zA-Z0-9_-]{11})'
             match = re.search(pattern, self.url_path)
             if match:
@@ -92,7 +91,7 @@ class ExamAttempt(models.Model):
     score = models.IntegerField(default=0)
     total_questions = models.IntegerField(default=0)
     percentage = models.IntegerField(default=0)
-    time_taken_seconds = models.IntegerField(default=0) # Useful for timer tracking
+    time_taken_seconds = models.IntegerField(default=0)
     date_taken = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -102,7 +101,7 @@ class ExamAttempt(models.Model):
 class UserAnswer(models.Model):
     exam_attempt = models.ForeignKey(ExamAttempt, on_delete=models.CASCADE, related_name='user_answers')
     mcq = models.ForeignKey(MCQ, on_delete=models.CASCADE)
-    selected_option = models.CharField(max_length=10, blank=True, null=True) # E.g., 'A', 'B', 'C', 'D' or None
+    selected_option = models.CharField(max_length=10, blank=True, null=True)
     is_correct = models.BooleanField(default=False)
 
     def __str__(self):
@@ -159,6 +158,38 @@ class ChapterNote(models.Model):
         return f"{self.user.username} - Notes for {self.chapter.name}"
 
 
+# ---------------------------------------------------------------------------
+# MIXED PRACTICE — kept deliberately separate from ExamAttempt/UserAnswer so
+# a mixed/entry-test-style session never writes into chapter mastery, which
+# reflects curriculum understanding, not timed cross-subtopic performance.
+# ---------------------------------------------------------------------------
+
+class MixedPracticeAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mixed_practice_attempts')
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
+    score = models.IntegerField(default=0)
+    total_questions = models.IntegerField(default=0)
+    percentage = models.IntegerField(default=0)
+    date_taken = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.user.username} - Mixed Practice: {self.chapter.name} ({self.percentage}%)"
+
+
+class MixedPracticeAnswer(models.Model):
+    attempt = models.ForeignKey(MixedPracticeAttempt, on_delete=models.CASCADE, related_name='answers')
+    mcq = models.ForeignKey(MCQ, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=1)
+    selected_option = models.CharField(max_length=10, blank=True, null=True)
+    is_correct = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.attempt.user.username} - Q{self.mcq.id}: {self.selected_option}"
+
+
 PKT = ZoneInfo("Asia/Karachi")
 
 def get_user_streak(user):
@@ -182,8 +213,6 @@ def get_user_streak(user):
     today = timezone.now().astimezone(PKT).date()
     sorted_dates = sorted(all_local_dates, reverse=True)
 
-    # Streak only counts as "current" if the most recent activity was
-    # today or yesterday — otherwise it's broken, not just paused
     if sorted_dates[0] not in (today, today - timedelta(days=1)):
         return 0
 
@@ -193,7 +222,7 @@ def get_user_streak(user):
         if gap == 1:
             streak += 1
         elif gap == 0:
-            continue  # shouldn't happen since it's a set, but harmless
+            continue
         else:
             break
 
@@ -255,7 +284,7 @@ def get_user_subtopic_performance(user, chapter):
     for attempt in attempts:
         s = attempt.mcq.subtopic
         if s not in performance:
-            continue  # safety: subtopic not in the current list, skip
+            continue
         performance[s]['attempted'] += 1
         if attempt.is_correct:
             performance[s]['correct'] += 1

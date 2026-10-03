@@ -1,0 +1,43 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Mixed Practice | {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container mixed-practice-setup-page">
+
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">&larr; Back to {{ chapter.name }}</a>
+
+    <section class="hero-banner mixed-practice-hero">
+        <span class="chapter-badge badge-mixed">Entry-Test Style</span>
+        <h1>{{ chapter.name }} - Mixed Practice</h1>
+        <p>Build a custom session pulling questions across every sub-topic in this chapter &mdash; timed at 1 minute per question, just like the real thing.</p>
+    </section>
+
+    {% if error %}
+        <div class="no-data-card">
+            <p class="no-data">{{ error }}</p>
+        </div>
+    {% else %}
+        <div class="mixed-practice-setup-card">
+            <form method="POST" class="mixed-practice-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="total_questions">Number of questions</label>
+                    <input type="number" id="total_questions" name="total_questions" value="20" min="1" max="100">
+                    <small class="text-muted">We'll pull questions evenly across all {{ subtopics|length }} sub-topics in this chapter.</small>
+                </div>
+
+                <div class="subtopic-preview-list">
+                    <span class="subtopic-preview-label">Sub-topics included:</span>
+                    {% for s in subtopics %}
+                        <span class="badge">{{ s }}</span>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-primary mixed-practice-start-btn">Start Mixed Practice</button>
+            </form>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

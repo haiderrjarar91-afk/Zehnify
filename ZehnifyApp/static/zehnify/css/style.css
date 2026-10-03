@@ -2351,3 +2351,62 @@ label {
     gap: var(--space-xs);
   }
 }
+
+/* --- Mixed Practice: new icon-mixed color (reuses the purple accent token, 
+   amber was already taken by exam-related cards) --- */
+.icon-mixed {
+  background-color: var(--color-accent-purple-bg);
+  color: var(--color-accent-purple);
+}
+
+.module-mixed-practice {
+  border-color: var(--color-accent-purple);
+}
+
+.chapter-badge.badge-mixed {
+  background-color: rgba(109, 40, 217, 0.35);
+  color: #f1e9fc;
+}
+
+/* --- Setup page --- */
+.mixed-practice-setup-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-xl);
+  margin-top: var(--space-lg);
+  max-width: 560px;
+}
+
+.mixed-practice-form .form-group {
+  margin-bottom: var(--space-lg);
+}
+
+.mixed-practice-form input[type="number"] {
+  max-width: 160px;
+}
+
+.subtopic-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.subtopic-preview-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  margin-right: var(--space-xs);
+}
+
+.mixed-practice-start-btn {
+  width: 100%;
+}
+
+/* --- Session shortage notice --- */
+.mixed-practice-shortage-notice {
+  margin-bottom: var(--space-lg);
+}

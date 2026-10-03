@@ -16,4 +16,7 @@ urlpatterns = [
     path('video/<int:video_id>/toggle-watched/', views.toggle_video_watched, name='toggle_video_watched'),
     path('lecture/<int:video_id>/', views.watch_lecture, name='watch_lecture'),
     path('notes/<int:chapter_id>/', views.notes, name='notes_page'),
+    path('chapter/<int:chapter_id>/mixed-practice/', views.mixed_practice_setup, name='mixed_practice_setup'),
+    path('mixed-practice/<int:attempt_id>/', views.mixed_practice_session, name='mixed_practice_session'),
+    path('mixed-practice/<int:attempt_id>/review/', views.mixed_practice_review, name='mixed_practice_review'),
 ]

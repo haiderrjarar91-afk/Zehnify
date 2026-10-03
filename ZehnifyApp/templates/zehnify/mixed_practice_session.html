@@ -1,0 +1,97 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Mixed Practice | {{ chapter.name }} | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container mixed-practice-session-page">
+
+    <a href="{% url 'details_page' chapter.id %}" class="back-link">&larr; Back to {{ chapter.name }}</a>
+
+    <section class="hero-banner mixed-practice-hero">
+        <span class="chapter-badge badge-mixed">Entry-Test Style</span>
+        <h1>{{ chapter.name }} - Mixed Practice</h1>
+        <p>{{ answers|length }} questions, mixed across sub-topics.</p>
+    </section>
+
+    {% if shortage_notice %}
+        <div class="state-warning mixed-practice-shortage-notice">
+            &#9888; {{ shortage_notice }}
+        </div>
+    {% endif %}
+
+    <div id="timer-container" class="exam-timer-container">
+        <span>&#9201; Time Remaining:</span> <span id="timer">--:--</span>
+    </div>
+
+    <form id="mixed-practice-form" method="POST" class="exam-form">
+        {% csrf_token %}
+
+        <div class="question-list">
+            {% for ans in answers %}
+                {% with m=ans.mcq %}
+                <div class="question-card">
+                    <div class="question-header">
+                        <span class="q-number">Question {{ forloop.counter }}</span>
+                        <div class="q-text">{{ m.question_text|safe }}</div>
+                    </div>
+
+                    {% if m.diagram %}
+                        <div class="mcq-diagram-wrapper">
+                            <img src="{{ m.diagram.url }}" alt="Question Diagram" class="mcq-diagram-img">
+                        </div>
+                    {% endif %}
+
+                    <div class="options-group">
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="A" class="option-radio">
+                            <span class="option-text"><strong>A)</strong> {{ m.A|safe }}</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="B" class="option-radio">
+                            <span class="option-text"><strong>B)</strong> {{ m.B|safe }}</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="C" class="option-radio">
+                            <span class="option-text"><strong>C)</strong> {{ m.C|safe }}</span>
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="Q{{ m.id }}" value="D" class="option-radio">
+                            <span class="option-text"><strong>D)</strong> {{ m.D|safe }}</span>
+                        </label>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+
+        <div class="exam-submit-row">
+            <button type="submit" class="btn-submit-exam">Submit Mixed Practice</button>
+        </div>
+    </form>
+
+    <script>
+        const totalQuestions = parseInt("{{ answers|length }}") || 0;
+        let timeInSeconds = totalQuestions * 60;
+
+        const timerDisplay = document.getElementById('timer');
+        const sessionForm = document.getElementById('mixed-practice-form');
+
+        function updateTimer() {
+            const minutes = Math.floor(timeInSeconds / 60);
+            const seconds = timeInSeconds % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            if (timeInSeconds <= 0) {
+                clearInterval(timerInterval);
+                alert("Time's up! Submitting your session automatically.");
+                sessionForm.submit();
+            } else {
+                timeInSeconds--;
+            }
+        }
+
+        updateTimer();
+        const timerInterval = setInterval(updateTimer, 1000);
+    </script>
+</div>
+{% endblock %}

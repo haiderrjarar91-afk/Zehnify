@@ -68,6 +68,16 @@
             <span class="chapter-arrow">&rarr;</span>
         </a>
 
+        <!-- 3.5 Mixed Practice Module (entry-test-style, cross-subtopic) -->
+        <a href="{% url 'mixed_practice_setup' chapter.id %}" class="module-card module-mixed-practice">
+            <div class="module-icon icon-mixed">&#9889;</div>
+            <div class="module-info">
+                <h3>Mixed Practice</h3>
+                <p>Build a custom, timed session mixing sub-topics &mdash; the way entry tests actually feel.</p>
+            </div>
+            <span class="chapter-arrow">&rarr;</span>
+        </a>
+
         <!-- 4. Exam Review Module (Shows if an attempt exists) -->
         {% if latest_attempt %}
         <a href="{% url 'exam_review' chapter.id latest_attempt.id %}" class="module-card">

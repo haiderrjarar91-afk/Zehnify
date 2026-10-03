@@ -1,0 +1,77 @@
+{% extends 'zehnify/base.html' %}
+
+{% block title %}Mixed Practice Results | Zehnify{% endblock %}
+
+{% block content %}
+<div class="page-container mixed-practice-review-page">
+
+    <a href="{% url 'details_page' attempt.chapter.id %}" class="back-link">&larr; Back to {{ attempt.chapter.name }}</a>
+
+    <section class="hero-banner exam-review-hero">
+        <span class="chapter-badge badge-mixed">Mixed Practice Results</span>
+        <h1>{{ attempt.chapter.name }} - Mixed Practice</h1>
+        <p class="exam-score-text">Score: <strong>{{ attempt.score }} / {{ attempt.total_questions }}</strong> ({{ attempt.percentage }}%)</p>
+    </section>
+
+    {% if weakness_list %}
+        <details class="weakness-summary-accordion">
+            <summary class="weakness-summary-trigger">
+                <span>&#128269; See Your Specific Weaknesses</span>
+            </summary>
+            <div class="weakness-summary-content">
+                {% for w in weakness_list %}
+                    <a href="{% url 'practice_page' attempt.chapter.id %}?filter=subtopic&subtopic={{ w.subtopic|urlencode }}" class="weakness-row">
+                        <span class="weakness-subtopic">{{ w.subtopic }}</span>
+                        <span class="weakness-count">{{ w.wrong }}/{{ w.total }} wrong</span>
+                        <span class="weakness-arrow">&rarr;</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </details>
+    {% endif %}
+
+    <div class="question-list">
+        {% for ans in answers %}
+            <div class="question-card review-card {% if ans.is_correct %}card-pass{% else %}card-fail{% endif %}">
+                <div class="question-header">
+                    <span class="q-number">Question {{ forloop.counter }}</span>
+                    <div class="q-text">{{ ans.mcq.question_text|safe }}</div>
+                </div>
+
+                {% if ans.mcq.diagram %}
+                    <div class="mcq-diagram-wrapper">
+                        <img src="{{ ans.mcq.diagram.url }}" alt="Question Diagram" class="mcq-diagram-img">
+                    </div>
+                {% endif %}
+
+                <div class="options-review">
+                    <div class="review-status-row">
+                        <span class="user-answer-pill {% if ans.is_correct %}pill-correct{% else %}pill-incorrect{% endif %}">
+                            Your Answer:
+                            {% if ans.selected_option %}
+                                <strong>Option {{ ans.selected_option }}</strong>
+                            {% else %}
+                                <em>Unanswered</em>
+                            {% endif %}
+                        </span>
+                        <span class="correct-answer-pill-review">
+                            Correct Answer: <strong>Option {{ ans.mcq.correct_option }}</strong>
+                        </span>
+                    </div>
+                </div>
+
+                {% if ans.mcq.master_explanation %}
+                    <div class="explanation-box">
+                        <strong>Explanation:</strong>
+                        <div>{{ ans.mcq.master_explanation|safe }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="no-data-card">
+                <p class="no-data">No answers found for this session.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
