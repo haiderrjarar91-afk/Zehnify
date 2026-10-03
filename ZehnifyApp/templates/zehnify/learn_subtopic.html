@@ -54,48 +54,71 @@
 
             {% for lecture in lectures %}
 
-                <a
-                    href="{% url 'watch_lecture' lecture.id %}"
-                    class="learn-path-card {% if lecture.id in watched_ids %}is-completed{% endif %}"
-                >
+                <div class="learn-path-card {% if lecture.id in watched_ids %}is-completed{% endif %}">
 
-                    <div class="learn-path-number">
-                        {% if lecture.id in watched_ids %}
-                            &#10003;
-                        {% else %}
-                            {{ forloop.counter }}
-                        {% endif %}
-                    </div>
+                    <a
+                        href="{% url 'watch_lecture' lecture.id %}"
+                        class="learn-path-link"
+                    >
 
-                    <div class="learn-path-card-content">
-
-                        <div class="learn-path-card-meta">
-
-                            <span class="learn-path-type">
-                                Lecture {{ forloop.counter }}
-                            </span>
-
+                        <div class="learn-path-number">
                             {% if lecture.id in watched_ids %}
-                                <span class="learn-completed-label">
-                                    Completed
-                                </span>
+                                &#10003;
+                            {% else %}
+                                {{ forloop.counter }}
                             {% endif %}
+                        </div>
+
+                        <div class="learn-path-card-content">
+
+                            <div class="learn-path-card-meta">
+
+                                <span class="learn-path-type">
+                                    Lecture {{ forloop.counter }}
+                                </span>
+
+                                {% if lecture.id in watched_ids %}
+                                    <span class="learn-completed-label">
+                                        Completed
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            <h3>{{ lecture.title }}</h3>
+
+                            <span class="learn-path-action">
+                                {% if lecture.id in watched_ids %}
+                                    Watch again &rarr;
+                                {% else %}
+                                    Watch Lecture &rarr;
+                                {% endif %}
+                            </span>
 
                         </div>
 
-                        <h3>{{ lecture.title }}</h3>
+                    </a>
 
-                        <span class="learn-path-action">
-                            {% if lecture.id in watched_ids %}
-                                Watch again &rarr;
-                            {% else %}
-                                Watch Lecture &rarr;
-                            {% endif %}
-                        </span>
+                    <form
+                        method="post"
+                        action="{% url 'toggle_video_watched' lecture.id %}"
+                        class="learn-complete-form"
+                    >
+                        {% csrf_token %}
 
-                    </div>
+                        {% if lecture.id in watched_ids %}
+                            <button type="submit" class="btn btn-sm learn-complete-btn is-done"
+                                    title="Click to mark this lecture as not completed">
+                                Completed &#10003;
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-sm learn-complete-btn">
+                                Mark complete
+                            </button>
+                        {% endif %}
+                    </form>
 
-                </a>
+                </div>
 
             {% empty %}
 
