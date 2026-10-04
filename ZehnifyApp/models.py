@@ -43,6 +43,7 @@ class Chapter(models.Model):
     stream = models.CharField(max_length=20)
     grade = models.IntegerField(choices=GRADE_CHOICES, default=11)
     subject = models.ForeignKey(Subject, related_name='chapters', on_delete=models.CASCADE)
+    is_published = models.BooleanField(default=False)
     key_formulas = models.TextField(
         blank=True,
         null=True,

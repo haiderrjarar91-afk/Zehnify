@@ -96,7 +96,10 @@ def home(request):
 
     for subject in subjects:
 
-        subject_chapters = subject.chapters.all()
+        # Only published chapters are part of the live product.
+        subject_chapters = subject.chapters.filter(
+            is_published=True
+        )
 
         total_possible_weight = 0
         total_calculated_weight = 0
@@ -163,14 +166,17 @@ def sub_details(request, subject_id):
         stream__in=[user_stream, 'BOTH']
     )
 
+    # Only published chapters are visible in the live product.
     chapters_11th = Chapter.objects.filter(
         subject=subject,
-        grade=11
+        grade=11,
+        is_published=True
     )
 
     chapters_12th = Chapter.objects.filter(
         subject=subject,
-        grade=12
+        grade=12,
+        is_published=True
     )
 
     return render(
@@ -189,7 +195,8 @@ def chapterdetail(request, chapter_id):
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     mastery_record = Userchaptermastery.objects.filter(
@@ -239,7 +246,8 @@ def learn(request, chapter_id):
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     subtopics = get_chapter_subtopics(
@@ -310,7 +318,8 @@ def learn_subtopic(
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     lectures = ChapterVideo.objects.filter(
@@ -356,7 +365,8 @@ def learn_subtopic_practice(
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     # -----------------------------------------------------------------------
@@ -366,8 +376,7 @@ def learn_subtopic_practice(
 
     session_key = (
         f'learn_practice_'
-        f'{chapter.id}_'
-        f'{quote(subtopic, safe="")}'
+        f'{chapter.id}_{quote(subtopic, safe="")}'
     )
 
     question_queryset = MCQ.objects.filter(
@@ -617,7 +626,8 @@ def my_mistakes(request, chapter_id):
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     # Safety net: exam questions can never appear here, even if one were
@@ -817,7 +827,8 @@ def notes(request, chapter_id):
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     note, created = ChapterNote.objects.get_or_create(
@@ -868,7 +879,8 @@ def watch_lecture(request, video_id):
 
     lecture = get_object_or_404(
         ChapterVideo,
-        pk=video_id
+        pk=video_id,
+        chapter__is_published=True
     )
 
     return render(
@@ -889,7 +901,8 @@ def Exam(request, chapter_id):
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     mcqs = MCQ.objects.filter(
@@ -980,7 +993,8 @@ def exam_review(
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     attempt = get_object_or_404(
@@ -1065,7 +1079,8 @@ def toggle_video_watched(
 
     video = get_object_or_404(
         ChapterVideo,
-        pk=video_id
+        pk=video_id,
+        chapter__is_published=True
     )
 
     progress, created = (
@@ -1107,7 +1122,8 @@ def mixed_practice_setup(
 
     chapter = get_object_or_404(
         Chapter,
-        id=chapter_id
+        id=chapter_id,
+        is_published=True
     )
 
     subtopics = get_chapter_subtopics(
@@ -1263,7 +1279,8 @@ def mixed_practice_session(
     attempt = get_object_or_404(
         MixedPracticeAttempt,
         id=attempt_id,
-        user=request.user
+        user=request.user,
+        chapter__is_published=True
     )
 
     answers = (
@@ -1358,7 +1375,8 @@ def mixed_practice_review(
     attempt = get_object_or_404(
         MixedPracticeAttempt,
         id=attempt_id,
-        user=request.user
+        user=request.user,
+        chapter__is_published=True
     )
 
     answers = (

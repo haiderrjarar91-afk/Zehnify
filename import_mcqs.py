@@ -99,6 +99,12 @@ def run_import(json_file_path):
         else:
             diagram_path = None
 
+        # NOTE: 'subtopic' is intentionally NOT in defaults below.
+        # update_or_create() overwrites every field in defaults on EVERY
+        # run, including on existing rows — if subtopic were here, a
+        # re-run of this script would silently blank out any AI-tagged
+        # subtopic data on questions that already exist. Instead, it's
+        # only set once, below, on genuinely new rows.
         mcq, created = MCQ.objects.update_or_create(
             chapter=chapter,
             question_text=item['question_text'],
@@ -108,21 +114,17 @@ def run_import(json_file_path):
                 'C': option_c,
                 'D': option_d,
                 'correct_option': correct_opt,
-                'master_explanation': item.get(
-                    'master_explanation',
-                    ''
-                ),
-                'is_exam_question': item.get(
-                    'is_exam_question',
-                    False
-                ),
+                'master_explanation': item.get('master_explanation', ''),
+                'is_exam_question': item.get('is_exam_question', False),
                 'diagram': diagram_path,
-                'subtopic': item.get('subtopic', ''),
             }
         )
 
         if created:
             created_count += 1
+            if item.get('subtopic'):
+                mcq.subtopic = item['subtopic']
+                mcq.save(update_fields=['subtopic'])
         else:
             updated_count += 1
 
