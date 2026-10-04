@@ -76,10 +76,16 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# db.sqlite3 is the real working database and is gitignored, so it only exists
+# on the developer's machine. On a fresh clone it is missing, so we fall back to
+# the sanitized demo database (db_demo.sqlite3) that ships with the repo.
+_REAL_DB = BASE_DIR / 'db.sqlite3'
+_DEMO_DB = BASE_DIR / 'db_demo.sqlite3'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': _REAL_DB if _REAL_DB.exists() else _DEMO_DB,
     }
 }
 
